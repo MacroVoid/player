@@ -1,1196 +1,1439 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VOD Player & Chat Simulation</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
 
     <style>
-        :root {
-            --bg-color: #09090b;
-            --chat-bg: #18181b;
-            --panel-bg: rgba(24, 24, 27, 0.65);
-            --text-color: #f4f4f5;
-            --text-muted: #a1a1aa;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --accent-color: #9147ff;
-            --accent-hover: #a970ff;
-        }
+      :root {
+        --bg-color: #09090b;
+        --chat-bg: #18181b;
+        --panel-bg: rgba(24, 24, 27, 0.65);
+        --text-color: #f4f4f5;
+        --text-muted: #a1a1aa;
+        --border-color: rgba(255, 255, 255, 0.08);
+        --accent-color: #9147ff;
+        --accent-hover: #a970ff;
+      }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+      }
 
-        body {
-            font-family: 'Roboto', 'Segoe UI', Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-        }
+      body {
+        font-family: "Roboto", "Segoe UI", Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+      }
 
-        #upload-screen {
-            position: fixed;
-            inset: 0;
-            background-image: radial-gradient(circle at 50% -20%, #2a1a4a, var(--bg-color) 80%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
+      #upload-screen {
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(
+          circle at 50% -20%,
+          #2a1a4a,
+          var(--bg-color) 80%
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        transition:
+          opacity 0.5s ease,
+          visibility 0.5s ease;
+      }
 
-        .upload-card {
-            background: var(--panel-bg);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--border-color);
-            padding: 40px 48px;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
+      .upload-card {
+        background: var(--panel-bg);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--border-color);
+        padding: 40px 48px;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
 
-        .upload-card h2 {
-            font-size: 1.6rem;
-            text-align: center;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-        }
+      .upload-card h2 {
+        font-size: 1.6rem;
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+      }
 
-        .file-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+      .file-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-        .file-group label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+      .file-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
 
-        .file-group input[type="file"] {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-color);
-            padding: 12px 16px;
-            border-radius: 12px;
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: border-color 0.2s ease, background 0.2s ease;
-        }
+      .file-group input[type="file"] {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-color);
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease;
+      }
 
-        .file-group input[type="file"]:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.3);
-        }
+      .file-group input[type="file"]:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.3);
+      }
 
-        .btn-start {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 1.05rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
-            margin-top: 6px;
-            box-shadow: 0 4px 12px rgba(145, 71, 255, 0.3);
-        }
+      .btn-start {
+        background-color: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background-color 0.2s,
+          transform 0.2s,
+          box-shadow 0.2s;
+        margin-top: 6px;
+        box-shadow: 0 4px 12px rgba(145, 71, 255, 0.3);
+      }
 
-        .btn-start:hover:not(:disabled) {
-            background-color: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(145, 71, 255, 0.4);
-        }
+      .btn-start:hover:not(:disabled) {
+        background-color: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(145, 71, 255, 0.4);
+      }
 
-        .btn-start:disabled {
-            background-color: #3f3f46;
-            box-shadow: none;
-            color: #71717a;
-            cursor: not-allowed;
-        }
+      .btn-start:disabled {
+        background-color: #3f3f46;
+        box-shadow: none;
+        color: #71717a;
+        cursor: not-allowed;
+      }
 
-        .btn-demo {
-            background-color: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+      .btn-demo {
+        background-color: transparent;
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
 
-        .btn-demo:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-color);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
+      .btn-demo:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--text-color);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
 
-        #app-container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
+      #app-container {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
 
-        #player-container {
-            flex: 1;
-            background-color: #000;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+      #player-container {
+        flex: 1;
+        background-color: #000;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
 
-        video {
-            width: 100%;
-            height: 100%;
-            max-height: 100vh;
-            object-fit: contain;
-            cursor: pointer;
-        }
+      video {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        object-fit: contain;
+        cursor: pointer;
+      }
 
-        /* Полное скрытие курсора на плеере и видео когда элементы неактивны */
-        #player-container.controls-hidden,
-        #player-container.controls-hidden video {
-            cursor: none !important;
-        }
+      /* Полное скрытие курсора на плеере и видео когда элементы неактивны */
+      #player-container.controls-hidden,
+      #player-container.controls-hidden video {
+        cursor: none !important;
+      }
 
-        /* Центральное визуальное оповещение (play, pause, vol, seek) */
-        .action-overlay-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 25;
-        }
+      /* Центральное визуальное оповещение (play, pause, vol, seek) */
+      .action-overlay-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 25;
+      }
 
-        .action-overlay-center svg {
-            width: 36px;
-            height: 36px;
-            fill: currentColor;
-        }
+      .action-overlay-center svg {
+        width: 36px;
+        height: 36px;
+        fill: currentColor;
+      }
 
-        .action-overlay-center .action-text {
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-top: 4px;
-            display: none;
-        }
+      .action-overlay-center .action-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 4px;
+        display: none;
+      }
 
-        @keyframes actionPing {
-            0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
-            40% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      @keyframes actionPing {
+        0% {
+          transform: translate(-50%, -50%) scale(0.7);
+          opacity: 0;
         }
+        40% {
+          transform: translate(-50%, -50%) scale(1.05);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+      }
 
-        .action-overlay-center.animate {
-            animation: actionPing 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
+      .action-overlay-center.animate {
+        animation: actionPing 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+          forwards;
+      }
 
-        .action-overlay-center.fade-out {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(1.1);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
+      .action-overlay-center.fade-out {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.1);
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
 
-        /* Нижняя панель */
-        .controls-overlay {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            right: 30px;
-            background: rgba(24, 24, 27, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 16px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
+      /* Нижняя панель */
+      .controls-overlay {
+        position: absolute;
+        bottom: 30px;
+        left: 30px;
+        right: 30px;
+        background: rgba(24, 24, 27, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transition:
+          opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+          transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        z-index: 10;
+      }
 
-        #player-container.controls-hidden .controls-overlay {
-            opacity: 0;
-            transform: translateY(20px) scale(0.98);
-            pointer-events: none;
-        }
+      #player-container.controls-hidden .controls-overlay {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+        pointer-events: none;
+      }
 
-        .timeline-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
+      .timeline-container {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
 
-        .preview-container {
-            position: absolute;
-            bottom: 15px; 
-            left: 0;
-            transform: translateX(-50%);
-            background: rgba(24, 24, 27, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-            z-index: 50;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-        }
+      .preview-container {
+        position: absolute;
+        bottom: 15px;
+        left: 0;
+        transform: translateX(-50%);
+        background: rgba(24, 24, 27, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 50;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      }
 
-        .preview-container.visible {
-            opacity: 1;
-        }
+      .preview-container.visible {
+        opacity: 1;
+      }
 
-        .preview-container video {
-            width: 160px;
-            height: 90px;
-            border-radius: 4px;
-            background: #000;
-            object-fit: cover;
-        }
+      .preview-container video {
+        width: 160px;
+        height: 90px;
+        border-radius: 4px;
+        background: #000;
+        object-fit: cover;
+      }
 
-        .preview-time {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-color);
-            font-variant-numeric: tabular-nums;
-        }
+      .preview-time {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-color);
+        font-variant-numeric: tabular-nums;
+      }
 
-        .seek-bar {
-            width: 100%;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            cursor: pointer;
-            accent-color: var(--accent-color);
-            transition: height 0.15s ease;
-        }
+      .seek-bar {
+        width: 100%;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        cursor: pointer;
+        accent-color: var(--accent-color);
+        transition: height 0.15s ease;
+      }
 
-        .seek-bar:hover {
-            height: 8px;
-        }
+      .seek-bar:hover {
+        height: 8px;
+      }
 
-        .buttons-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      .buttons-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-        .left-controls, .right-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+      .left-controls,
+      .right-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-        .control-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.9);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
+      .control-btn {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+      }
 
-        .control-btn:hover {
-            color: var(--accent-hover);
-            background-color: rgba(255, 255, 255, 0.15);
-            transform: scale(1.05);
-        }
+      .control-btn:hover {
+        color: var(--accent-hover);
+        background-color: rgba(255, 255, 255, 0.15);
+        transform: scale(1.05);
+      }
 
-        .control-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
+      .control-btn svg {
+        width: 24px;
+        height: 24px;
+        fill: currentColor;
+      }
 
-        .volume-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+      .volume-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-        .volume-bar {
-            width: 80px;
-            height: 5px;
-            accent-color: var(--accent-color);
-            cursor: pointer;
-        }
+      .volume-bar {
+        width: 80px;
+        height: 5px;
+        accent-color: var(--accent-color);
+        cursor: pointer;
+      }
 
-        .time-display {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 0.5px;
-            margin-left: 8px;
-        }
+      .time-display {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.5px;
+        margin-left: 8px;
+      }
 
-        .speed-select {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
-            transition: background 0.2s ease;
-        }
+      .speed-select {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: background 0.2s ease;
+      }
 
-        .speed-select:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
+      .speed-select:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
 
-        .speed-select option {
-            background: var(--chat-bg);
-        }
+      .speed-select option {
+        background: var(--chat-bg);
+      }
 
-        .speed-overlay {
-            position: absolute;
-            top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(24, 24, 27, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: var(--text-color);
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            z-index: 20;
-        }
+      .speed-overlay {
+        position: absolute;
+        top: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(24, 24, 27, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-color);
+        padding: 10px 20px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        z-index: 20;
+      }
 
-        .speed-overlay.visible {
-            opacity: 1;
-            transform: translateX(-50%) scale(1.05);
-        }
+      .speed-overlay.visible {
+        opacity: 1;
+        transform: translateX(-50%) scale(1.05);
+      }
 
-        #chat-section {
-            width: 400px;
-            flex-shrink: 0;
-            background-color: var(--chat-bg);
-            border-left: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+      #chat-section {
+        width: 400px;
+        flex-shrink: 0;
+        background-color: var(--chat-bg);
+        border-left: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
 
-        .chat-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 700;
-            font-size: 0.95rem;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background-color: rgba(24, 24, 27, 0.8);
-            backdrop-filter: blur(10px);
-        }
+      .chat-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background-color: rgba(24, 24, 27, 0.8);
+        backdrop-filter: blur(10px);
+      }
 
-        #chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px 0;
-        }
+      #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 0;
+      }
 
-        #chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        #chat-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #chat-messages::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-        #chat-messages::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
+      #chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+      #chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #chat-messages::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+      #chat-messages::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
 
-        #chat-messages * {
-            user-select: text;
-            -webkit-user-select: text;
-        }
+      #chat-messages * {
+        user-select: text;
+        -webkit-user-select: text;
+      }
 
-        .message-container {
-            padding: 6px 20px;
-            line-height: 24px;
-            font-size: 16px;
-            word-wrap: break-word;
-            display: block;
-            transition: background-color 0.1s;
-        }
+      .message-container {
+        padding: 6px 20px;
+        line-height: 24px;
+        font-size: 16px;
+        word-wrap: break-word;
+        display: block;
+        transition: background-color 0.1s;
+      }
 
-        .message-container:hover {
-            background-color: rgba(255, 255, 255, 0.04);
-        }
+      .message-container:hover {
+        background-color: rgba(255, 255, 255, 0.04);
+      }
 
-        .message-container span {
-            display: inline-block;
-        }
-        .message-container .message-text {
-            display: inline;
-        }
+      .message-container span {
+        display: inline-block;
+      }
+      .message-container .message-text {
+        display: inline;
+      }
 
-        .timestamp {
-            font-size: 0.85em;
-            color: var(--text-muted);
-            margin-right: 8px;
-        }
+      .timestamp {
+        font-size: 0.85em;
+        color: var(--text-muted);
+        margin-right: 8px;
+      }
 
-        .badges {
-            display: inline-block;
-        }
+      .badges {
+        display: inline-block;
+      }
 
-        .badge-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 2px;
-            vertical-align: middle;
-            margin-right: 4px;
-            position: relative;
-            top: -2px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+      .badge-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 2px;
+        vertical-align: middle;
+        margin-right: 4px;
+        position: relative;
+        top: -2px;
+        user-select: none;
+        -webkit-user-select: none;
+      }
 
-        .username {
-            font-weight: 700;
-        }
+      .username {
+        font-weight: 700;
+      }
 
-        .colon {
-            color: var(--text-muted);
-            margin-right: 6px;
-        }
+      .colon {
+        color: var(--text-muted);
+        margin-right: 6px;
+      }
 
-        .system-message {
-            padding: 16px 20px;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
+      .system-message {
+        padding: 16px 20px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .emote {
+        vertical-align: middle;
+        height: 28px;
+        margin: -4px 2px 0 2px;
+        display: inline-block;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div id="upload-screen">
-        <div class="upload-card">
-            <h2>VOD Player</h2>
-            <div class="file-group">
-                <label>Видеофайл</label>
-                <input type="file" id="video-input" accept="video/*">
-            </div>
-            <div class="file-group">
-                <label>Файл чата JSON</label>
-                <input type="file" id="chat-input" accept=".json">
-            </div>
-            <button class="btn-start" id="start-btn" disabled>Запустить</button>
-            <button class="btn-demo" id="demo-btn">Демо режим (Быстрый просмотр)</button>
+      <div class="upload-card">
+        <h2>VOD Player</h2>
+        <div class="file-group">
+          <label>Видеофайл</label>
+          <input type="file" id="video-input" accept="video/*" />
         </div>
+        <div class="file-group">
+          <label>Файл чата JSON</label>
+          <input type="file" id="chat-input" accept=".json" />
+        </div>
+        <button class="btn-start" id="start-btn" disabled>Запустить</button>
+        <button class="btn-demo" id="demo-btn">
+          Демо режим (Быстрый просмотр)
+        </button>
+      </div>
     </div>
 
     <div id="app-container">
-        <div id="player-container">
-            <video id="main-video" playsinline></video>
-            
-            <div class="speed-overlay" id="speed-overlay">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
-                Скорость 2x
-            </div>
+      <div id="player-container">
+        <video id="main-video" playsinline></video>
 
-            <!-- Центральный попап для отображения действий (громкость, пауза, перемотка) -->
-            <div id="action-overlay-center" class="action-overlay-center">
-                <div id="action-icon-center"></div>
-                <div id="action-text-center" class="action-text"></div>
-            </div>
-            
-            <div class="controls-overlay" id="controls">
-                <div class="timeline-container">
-                    <div class="preview-container" id="preview-container">
-                        <video id="preview-video" muted playsinline></video>
-                        <div class="preview-time" id="preview-time">00:00</div>
-                    </div>
-                    <input type="range" class="seek-bar" id="seek-bar" min="0" max="100" step="0.1" value="0">
-                </div>
-                <div class="buttons-row">
-                    <div class="left-controls">
-                        <button class="control-btn" id="play-pause-btn" title="Воспроизведение (Пробел)">
-                            <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                            <svg id="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                        </button>
-                        <div class="volume-container">
-                            <button class="control-btn" id="mute-btn" title="Громкость (M)">
-                                <svg id="icon-vol-up" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                                <svg id="icon-vol-low" viewBox="0 0 24 24" style="display:none;"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                                <svg id="icon-mute" viewBox="0 0 24 24" style="display:none;"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                            </button>
-                            <input type="range" class="volume-bar" id="volume-bar" min="0" max="1" step="0.05" value="1">
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                    <div class="right-controls">
-                        <select class="speed-select" id="speed-select">
-                            <option value="0.5">0.5x</option>
-                            <option value="1" selected>1.0x</option>
-                            <option value="1.25">1.25x</option>
-                            <option value="1.5">1.5x</option>
-                            <option value="2">2.0x</option>
-                        </select>
-                        <button class="control-btn" id="fullscreen-btn" title="Во весь экран (F)">
-                            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div class="speed-overlay" id="speed-overlay">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
+          </svg>
+          Скорость 2x
         </div>
 
-        <div id="chat-section">
-            <div class="chat-header">Чат трансляции</div>
-            <div id="chat-messages"></div>
+        <!-- Центральный попап для отображения действий (громкость, пауза, перемотка) -->
+        <div id="action-overlay-center" class="action-overlay-center">
+          <div id="action-icon-center"></div>
+          <div id="action-text-center" class="action-text"></div>
         </div>
+
+        <div class="controls-overlay" id="controls">
+          <div class="timeline-container">
+            <div class="preview-container" id="preview-container">
+              <video id="preview-video" muted playsinline></video>
+              <div class="preview-time" id="preview-time">00:00</div>
+            </div>
+            <input
+              type="range"
+              class="seek-bar"
+              id="seek-bar"
+              min="0"
+              max="100"
+              step="0.1"
+              value="0"
+            />
+          </div>
+          <div class="buttons-row">
+            <div class="left-controls">
+              <button
+                class="control-btn"
+                id="play-pause-btn"
+                title="Воспроизведение (Пробел)"
+              >
+                <svg id="icon-play" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <svg id="icon-pause" viewBox="0 0 24 24" style="display: none">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+              </button>
+              <div class="volume-container">
+                <button class="control-btn" id="mute-btn" title="Громкость (M)">
+                  <svg id="icon-vol-up" viewBox="0 0 24 24">
+                    <path
+                      d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+                    />
+                  </svg>
+                  <svg
+                    id="icon-vol-low"
+                    viewBox="0 0 24 24"
+                    style="display: none"
+                  >
+                    <path
+                      d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+                    />
+                  </svg>
+                  <svg id="icon-mute" viewBox="0 0 24 24" style="display: none">
+                    <path
+                      d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
+                    />
+                  </svg>
+                </button>
+                <input
+                  type="range"
+                  class="volume-bar"
+                  id="volume-bar"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="1"
+                />
+              </div>
+              <div class="time-display" id="time-display">00:00 / 00:00</div>
+            </div>
+            <div class="right-controls">
+              <select class="speed-select" id="speed-select">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2.0x</option>
+              </select>
+              <button
+                class="control-btn"
+                id="fullscreen-btn"
+                title="Во весь экран (F)"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-section">
+        <div class="chat-header">Чат трансляции</div>
+        <div id="chat-messages"></div>
+      </div>
     </div>
 
     <script>
-        const videoInput = document.getElementById('video-input');
-        const chatInput = document.getElementById('chat-input');
-        const startBtn = document.getElementById('start-btn');
-        const demoBtn = document.getElementById('demo-btn');
-        const uploadScreen = document.getElementById('upload-screen');
-        const appContainer = document.getElementById('app-container');
-        
-        const playerContainer = document.getElementById('player-container');
-        const videoEl = document.getElementById('main-video');
-        const chatMessages = document.getElementById('chat-messages');
+      const videoInput = document.getElementById("video-input");
+      const chatInput = document.getElementById("chat-input");
+      const startBtn = document.getElementById("start-btn");
+      const demoBtn = document.getElementById("demo-btn");
+      const uploadScreen = document.getElementById("upload-screen");
+      const appContainer = document.getElementById("app-container");
 
-        const playPauseBtn = document.getElementById('play-pause-btn');
-        const iconPlay = document.getElementById('icon-play');
-        const iconPause = document.getElementById('icon-pause');
-        const seekBar = document.getElementById('seek-bar');
-        const muteBtn = document.getElementById('mute-btn');
-        
-        const iconVolUp = document.getElementById('icon-vol-up');
-        const iconVolLow = document.getElementById('icon-vol-low');
-        const iconMute = document.getElementById('icon-mute');
+      const playerContainer = document.getElementById("player-container");
+      const videoEl = document.getElementById("main-video");
+      const chatMessages = document.getElementById("chat-messages");
 
-        const volumeBar = document.getElementById('volume-bar');
-        const timeDisplay = document.getElementById('time-display');
-        const speedSelect = document.getElementById('speed-select');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const speedOverlay = document.getElementById('speed-overlay');
-        const previewContainer = document.getElementById('preview-container');
-        const previewVideo = document.getElementById('preview-video');
-        const previewTime = document.getElementById('preview-time');
+      const playPauseBtn = document.getElementById("play-pause-btn");
+      const iconPlay = document.getElementById("icon-play");
+      const iconPause = document.getElementById("icon-pause");
+      const seekBar = document.getElementById("seek-bar");
+      const muteBtn = document.getElementById("mute-btn");
 
-        // Иконки для центрального уведомления
-        const SVG_PLAY = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-        const SVG_PAUSE = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-        const SVG_FF = `<svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>`;
-        const SVG_REW = `<svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>`;
-        const SVG_VOL_UP = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
-        const SVG_VOL_LOW = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>`;
-        const SVG_VOL_MUTE = `<svg viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
+      const iconVolUp = document.getElementById("icon-vol-up");
+      const iconVolLow = document.getElementById("icon-vol-low");
+      const iconMute = document.getElementById("icon-mute");
 
-        let videoFile = null;
-        let chatData = null;
-        let normalizedMessages = [];
-        let lastRenderedTime = 0;
-        let isScrolledUp = false;
-        let controlsTimeout = null;
-        let actionOverlayTimeout = null;
+      const volumeBar = document.getElementById("volume-bar");
+      const timeDisplay = document.getElementById("time-display");
+      const speedSelect = document.getElementById("speed-select");
+      const fullscreenBtn = document.getElementById("fullscreen-btn");
+      const speedOverlay = document.getElementById("speed-overlay");
+      const previewContainer = document.getElementById("preview-container");
+      const previewVideo = document.getElementById("preview-video");
+      const previewTime = document.getElementById("preview-time");
 
-        let originalSpeed = 1;
-        let speedUpActive = false;
-        let pressTimer = null;
-        let isLongPress = false;
-        let isScrubbing = false;
-        let wasPausedBeforeSpeedUp = false;
+      // Иконки для центрального уведомления
+      const SVG_PLAY = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+      const SVG_PAUSE = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+      const SVG_FF = `<svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>`;
+      const SVG_REW = `<svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>`;
+      const SVG_VOL_UP = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+      const SVG_VOL_LOW = `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>`;
+      const SVG_VOL_MUTE = `<svg viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
 
-        const fallbackColors = [
-            '#FF0000', '#0000FF', '#008000', '#B22222', '#FF7F50',
-            '#9ACD32', '#FF4500', '#2E8B57', '#DAA520', '#D2691E',
-            '#5F9EA0', '#1E90FF', '#FF69B4', '#8A2BE2', '#00FF7F'
-        ];
-        const userColorsMap = {};
+      let videoFile = null;
+      let chatData = null;
+      let normalizedMessages = [];
+      let lastRenderedTime = 0;
+      let isScrolledUp = false;
+      let controlsTimeout = null;
+      let actionOverlayTimeout = null;
 
-        function getUserColor(username) {
-            if (!username) return fallbackColors[0];
-            
-            // Если цвет уже был выдан в этой сессии, берем его из памяти
-            if (userColorsMap[username]) return userColorsMap[username];
-            
-            let hash = 0;
-            
-            // 1. Сильный сдвиг на основе длины ника (разная длина = кардинально разный хэш)
-            hash += username.length * 137;
-            
-            // 2. Усиливаем разницу от первой и последней буквы (чтобы Alex и Olex отличались)
-            hash += username.charCodeAt(0) * 71;
-            hash += username.charCodeAt(username.length - 1) * 97;
+      let originalSpeed = 1;
+      let speedUpActive = false;
+      let pressTimer = null;
+      let isLongPress = false;
+      let isScrubbing = false;
+      let wasPausedBeforeSpeedUp = false;
 
-            // 3. Основной проход по всем буквам
-            for (let i = 0; i < username.length; i++) {
-                let charCode = username.charCodeAt(i);
-                // Умножаем код символа на его позицию (i + 1), чтобы анаграммы отличались
-                hash = ((hash << 5) - hash) + (charCode * (i + 1));
-                hash = hash & hash; // Приводим к 32-битному целому числу
-            }
+      const fallbackColors = [
+        "#FF0000",
+        "#0000FF",
+        "#008000",
+        "#B22222",
+        "#FF7F50",
+        "#9ACD32",
+        "#FF4500",
+        "#2E8B57",
+        "#DAA520",
+        "#D2691E",
+        "#5F9EA0",
+        "#1E90FF",
+        "#FF69B4",
+        "#8A2BE2",
+        "#00FF7F",
+      ];
+      const userColorsMap = {};
 
-            // Берем остаток от деления на количество цветов
-            const colorIndex = Math.abs(hash) % fallbackColors.length;
-            userColorsMap[username] = fallbackColors[colorIndex];
-            
-            return userColorsMap[username];
+      function getUserColor(username) {
+        if (!username) return fallbackColors[0];
+
+        // Если цвет уже был выдан в этой сессии, берем его из памяти
+        if (userColorsMap[username]) return userColorsMap[username];
+
+        let hash = 0;
+
+        // 1. Сильный сдвиг на основе длины ника (разная длина = кардинально разный хэш)
+        hash += username.length * 137;
+
+        // 2. Усиливаем разницу от первой и последней буквы (чтобы Alex и Olex отличались)
+        hash += username.charCodeAt(0) * 71;
+        hash += username.charCodeAt(username.length - 1) * 97;
+
+        // 3. Основной проход по всем буквам
+        for (let i = 0; i < username.length; i++) {
+          let charCode = username.charCodeAt(i);
+          // Умножаем код символа на его позицию (i + 1), чтобы анаграммы отличались
+          hash = (hash << 5) - hash + charCode * (i + 1);
+          hash = hash & hash; // Приводим к 32-битному целому числу
         }
 
-        function checkFilesReady() {
-            startBtn.disabled = !(videoFile && chatData);
+        // Берем остаток от деления на количество цветов
+        const colorIndex = Math.abs(hash) % fallbackColors.length;
+        userColorsMap[username] = fallbackColors[colorIndex];
+
+        return userColorsMap[username];
+      }
+
+      // Функция для защиты от сломанного HTML в сообщениях
+      function escapeHTML(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      // Функция замены текста на смайлики по индексам из JSON
+      function parseEmotesFromJSON(text, emotesData) {
+        if (!text) return '';
+        if (!emotesData || !Array.isArray(emotesData) || emotesData.length === 0) {
+          return escapeHTML(text);
         }
 
-        videoInput.addEventListener('change', (e) => {
-            videoFile = e.target.files[0];
+        const emoteArr = [];
+        
+        // Собираем все позиции всех смайликов в один массив
+        emotesData.forEach(emote => {
+          if (!emote.locations) return;
+          const positions = emote.locations.split(',');
+          positions.forEach(pos => {
+            const [start, end] = pos.split('-');
+            emoteArr.push({
+              id: emote.id,
+              start: parseInt(start),
+              end: parseInt(end)
+            });
+          });
+        });
+
+        // Сортируем по возрастанию позиции, чтобы заменять слева направо
+        emoteArr.sort((a, b) => a.start - b.start);
+
+        let resultHTML = '';
+        let currentIndex = 0;
+
+        for (const emp of emoteArr) {
+          // Добавляем обычный текст до смайлика (и экранируем его)
+          if (emp.start > currentIndex) {
+            resultHTML += escapeHTML(text.substring(currentIndex, emp.start));
+          }
+          // Добавляем саму картинку смайлика
+          resultHTML += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emp.id}/default/dark/1.0" class="emote" alt="emote">`;
+          // Сдвигаем текущий индекс (end - это индекс последнего символа смайла, поэтому +1)
+          currentIndex = emp.end + 1;
+        }
+
+        // Добавляем оставшийся хвост текста, если он есть
+        if (currentIndex < text.length) {
+          resultHTML += escapeHTML(text.substring(currentIndex));
+        }
+
+        return resultHTML;
+      }
+
+      function checkFilesReady() {
+        startBtn.disabled = !(videoFile && chatData);
+      }
+
+      videoInput.addEventListener("change", (e) => {
+        videoFile = e.target.files[0];
+        checkFilesReady();
+      });
+
+      chatInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            chatData = JSON.parse(event.target.result);
             checkFilesReady();
-        });
+          } catch (err) {
+            alert("Ошибка чтения JSON файла");
+          }
+        };
+        reader.readAsText(file);
+      });
 
-        chatInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    chatData = JSON.parse(event.target.result);
-                    checkFilesReady();
-                } catch (err) {
-                    alert('Ошибка чтения JSON файла');
-                }
-            };
-            reader.readAsText(file);
-        });
+      startBtn.addEventListener("click", () => {
+        const objectUrl = URL.createObjectURL(videoFile);
+        videoEl.src = objectUrl;
+        previewVideo.src = objectUrl;
+        normalizedMessages = normalizeMessages(chatData);
 
-        startBtn.addEventListener('click', () => {
-            const objectUrl = URL.createObjectURL(videoFile);
-            videoEl.src = objectUrl;
-            previewVideo.src = objectUrl;
-            normalizedMessages = normalizeMessages(chatData);
+        startApp();
+      });
 
-            startApp();
-        });
+      demoBtn.addEventListener("click", () => {
+        const demoVideoUrl =
+          "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4";
+        videoEl.src = demoVideoUrl;
+        previewVideo.src = demoVideoUrl;
 
-        demoBtn.addEventListener('click', () => {
-            const demoVideoUrl = "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4";
-            videoEl.src = demoVideoUrl;
-            previewVideo.src = demoVideoUrl;
-            
-            normalizedMessages = [];
-            const demoNames = ["Алексей", "GamerPro", "Nagibator2000", "СладкаяБулочка", "xX_Sniper_Xx", "KittensLover", "Ded_Inside", "Shadow", "Qwerty", "Panda"];
-            const demoMsgs = ["Всем привет!", "Ого, вот это момент", "Лмао", "Когда следующий стрим?", "F", "Скип", "+", "Кто понял, тот понял", "KEKW", "Ахахахах", "Где звук?", "123", "Погчамп!", "Зачем он это сделал?"];
-            
-            for (let i = 0; i < 200; i++) {
-                normalizedMessages.push({
-                    _timeSec: Math.random() * 122,
-                    author: { name: demoNames[Math.floor(Math.random() * demoNames.length)] },
-                    message: demoMsgs[Math.floor(Math.random() * demoMsgs.length)]
-                });
+        normalizedMessages = [];
+        const demoNames = [
+          "Алексей",
+          "GamerPro",
+          "Nagibator2000",
+          "СладкаяБулочка",
+          "xX_Sniper_Xx",
+          "KittensLover",
+          "Ded_Inside",
+          "Shadow",
+          "Qwerty",
+          "Panda",
+        ];
+        const demoMsgs = [
+          "Всем привет!",
+          "Ого, вот это момент",
+          "Лмао",
+          "Когда следующий стрим?",
+          "F",
+          "Скип",
+          "+",
+          "Кто понял, тот понял",
+          "KEKW",
+          "Ахахахах",
+          "Где звук?",
+          "123",
+          "Погчамп!",
+          "Зачем он это сделал?",
+        ];
+
+        for (let i = 0; i < 200; i++) {
+          normalizedMessages.push({
+            _timeSec: Math.random() * 122,
+            author: {
+              name: demoNames[Math.floor(Math.random() * demoNames.length)],
+            },
+            message: demoMsgs[Math.floor(Math.random() * demoMsgs.length)],
+          });
+        }
+        normalizedMessages.sort((a, b) => a._timeSec - b._timeSec);
+
+        startApp();
+      });
+
+      function startApp() {
+        uploadScreen.style.opacity = "0";
+        setTimeout(() => {
+          uploadScreen.style.visibility = "hidden";
+          appContainer.style.opacity = "1";
+          videoEl
+            .play()
+            .catch((e) =>
+              console.warn(
+                "Воспроизведение заблокировано браузером. Нажмите Play вручную.",
+              ),
+            );
+        }, 500);
+
+        initPlayerControls();
+        initSyncEngine();
+      }
+
+      function normalizeMessages(data) {
+        let list = [];
+        if (data.length > 0 && data[0].messages !== undefined) {
+          let accDuration = 0;
+          for (const frag of data) {
+            const msgs = frag.messages || [];
+            for (const m of msgs) {
+              const msgType = m.message_type || m.action_type;
+              if (msgType && msgType !== "text_message") continue;
+              list.push({
+                ...m,
+                _timeSec: accDuration + (m.time_in_seconds || 0),
+              });
             }
-            normalizedMessages.sort((a, b) => a._timeSec - b._timeSec);
+            accDuration += frag.video_duration || 0;
+          }
+        } else {
+          const valid = data
+            .filter((m) => {
+              const type = m.message_type || m.action_type;
+              return !type || type === "text_message";
+            })
+            .sort((a, b) => a.timestamp - b.timestamp);
 
-            startApp();
-        });
+          if (valid.length > 0) {
+            const baseTime = valid[0].timestamp / 1000000;
+            for (const m of valid) {
+              list.push({
+                ...m,
+                _timeSec: m.timestamp / 1000000 - baseTime,
+              });
+            }
+          }
+        }
+        return list.sort((a, b) => a._timeSec - b._timeSec);
+      }
 
-        function startApp() {
-            uploadScreen.style.opacity = '0';
-            setTimeout(() => {
-                uploadScreen.style.visibility = 'hidden';
-                appContainer.style.opacity = '1';
-                videoEl.play().catch(e => console.warn("Воспроизведение заблокировано браузером. Нажмите Play вручную."));
-            }, 500);
+      function showActionFeedback(iconSVG, text = "") {
+        const overlay = document.getElementById("action-overlay-center");
+        const iconContainer = document.getElementById("action-icon-center");
+        const textContainer = document.getElementById("action-text-center");
 
-            initPlayerControls();
-            initSyncEngine();
+        iconContainer.innerHTML = iconSVG;
+        textContainer.textContent = text;
+        textContainer.style.display = text ? "block" : "none";
+
+        overlay.classList.remove("animate", "fade-out");
+        void overlay.offsetWidth; // Сброс анимации
+        overlay.classList.add("animate");
+
+        clearTimeout(actionOverlayTimeout);
+        actionOverlayTimeout = setTimeout(() => {
+          overlay.classList.remove("animate");
+          overlay.classList.add("fade-out");
+        }, 300);
+      }
+
+      let controlsInitialized = false;
+
+      function initPlayerControls() {
+        if (controlsInitialized) return;
+        controlsInitialized = true;
+
+        function formatTime(s) {
+          if (isNaN(s)) return "00:00";
+          const total = Math.floor(s);
+          const h = Math.floor(total / 3600);
+          const m = Math.floor((total % 3600) / 60);
+          const sec = total % 60;
+          if (h > 0)
+            return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+          return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
         }
 
-        function normalizeMessages(data) {
-            let list = [];
-            if (data.length > 0 && data[0].messages !== undefined) {
-                let accDuration = 0;
-                for (const frag of data) {
-                    const msgs = frag.messages || [];
-                    for (const m of msgs) {
-                        const msgType = m.message_type || m.action_type;
-                        if (msgType && msgType !== 'text_message') continue;
-                        list.push({
-                            ...m,
-                            _timeSec: accDuration + (m.time_in_seconds || 0)
-                        });
-                    }
-                    accDuration += (frag.video_duration || 0);
-                }
-            } else {
-                const valid = data.filter(m => {
-                    const type = m.message_type || m.action_type;
-                    return !type || type === 'text_message';
-                }).sort((a, b) => a.timestamp - b.timestamp);
-
-                if (valid.length > 0) {
-                    const baseTime = valid[0].timestamp / 1000000;
-                    for (const m of valid) {
-                        list.push({
-                            ...m,
-                            _timeSec: (m.timestamp / 1000000) - baseTime
-                        });
-                    }
-                }
-            }
-            return list.sort((a, b) => a._timeSec - b._timeSec);
+        function togglePlay() {
+          if (videoEl.paused) {
+            videoEl.play();
+            showActionFeedback(SVG_PLAY);
+          } else {
+            videoEl.pause();
+            showActionFeedback(SVG_PAUSE);
+          }
         }
 
-        function showActionFeedback(iconSVG, text = '') {
-            const overlay = document.getElementById('action-overlay-center');
-            const iconContainer = document.getElementById('action-icon-center');
-            const textContainer = document.getElementById('action-text-center');
-            
-            iconContainer.innerHTML = iconSVG;
-            textContainer.textContent = text;
-            textContainer.style.display = text ? 'block' : 'none';
-            
-            overlay.classList.remove('animate', 'fade-out');
-            void overlay.offsetWidth; // Сброс анимации
-            overlay.classList.add('animate');
-            
-            clearTimeout(actionOverlayTimeout);
-            actionOverlayTimeout = setTimeout(() => {
-                overlay.classList.remove('animate');
-                overlay.classList.add('fade-out');
-            }, 300);
+        playPauseBtn.addEventListener("click", togglePlay);
+
+        videoEl.addEventListener("play", () => {
+          iconPlay.style.display = "none";
+          iconPause.style.display = "block";
+        });
+
+        videoEl.addEventListener("pause", () => {
+          iconPlay.style.display = "block";
+          iconPause.style.display = "none";
+          resetControlsTimeout();
+        });
+
+        videoEl.addEventListener("loadedmetadata", () => {
+          seekBar.max = videoEl.duration;
+          timeDisplay.textContent = `00:00 / ${formatTime(videoEl.duration)}`;
+        });
+
+        videoEl.addEventListener("timeupdate", () => {
+          if (!isScrubbing) {
+            seekBar.value = videoEl.currentTime;
+            timeDisplay.textContent = `${formatTime(videoEl.currentTime)} / ${formatTime(videoEl.duration)}`;
+          }
+        });
+
+        seekBar.addEventListener("mousedown", () => {
+          isScrubbing = true;
+        });
+
+        seekBar.addEventListener("mouseup", () => {
+          isScrubbing = false;
+        });
+
+        seekBar.addEventListener("input", () => {
+          timeDisplay.textContent = `${formatTime(seekBar.value)} / ${formatTime(videoEl.duration)}`;
+          videoEl.currentTime = seekBar.value;
+        });
+
+        seekBar.addEventListener("mouseenter", () => {
+          if (videoEl.readyState >= 1) {
+            previewContainer.classList.add("visible");
+          }
+        });
+
+        seekBar.addEventListener("mouseleave", () => {
+          previewContainer.classList.remove("visible");
+        });
+
+        seekBar.addEventListener("mousemove", (e) => {
+          const rect = seekBar.getBoundingClientRect();
+          let offsetX = e.clientX - rect.left;
+          if (offsetX < 0) offsetX = 0;
+          if (offsetX > rect.width) offsetX = rect.width;
+
+          const percentage = offsetX / rect.width;
+          const time = percentage * videoEl.duration;
+
+          previewContainer.style.left = `${percentage * 100}%`;
+          previewTime.textContent = formatTime(time);
+
+          if (previewVideo.readyState >= 1) {
+            previewVideo.currentTime = time;
+          }
+        });
+
+        volumeBar.addEventListener("input", () => {
+          videoEl.volume = volumeBar.value;
+          videoEl.muted = volumeBar.value == 0;
+        });
+
+        muteBtn.addEventListener("click", () => {
+          if (videoEl.muted || videoEl.volume === 0) {
+            videoEl.muted = false;
+            if (videoEl.volume === 0) {
+              videoEl.volume = 0.05; // 5% если было 0
+            }
+          } else {
+            videoEl.muted = true;
+          }
+
+          const vol = videoEl.muted ? 0 : videoEl.volume;
+          const svg =
+            vol === 0 ? SVG_VOL_MUTE : vol < 0.5 ? SVG_VOL_LOW : SVG_VOL_UP;
+          showActionFeedback(svg, Math.round(vol * 100) + "%");
+        });
+
+        videoEl.addEventListener("volumechange", () => {
+          const vol = videoEl.muted ? 0 : videoEl.volume;
+          volumeBar.value = vol;
+
+          iconVolUp.style.display = "none";
+          iconVolLow.style.display = "none";
+          iconMute.style.display = "none";
+
+          if (vol === 0) {
+            iconMute.style.display = "block";
+          } else if (vol < 0.5) {
+            iconVolLow.style.display = "block";
+          } else {
+            iconVolUp.style.display = "block";
+          }
+        });
+
+        speedSelect.addEventListener("change", () => {
+          videoEl.playbackRate = parseFloat(speedSelect.value);
+        });
+
+        fullscreenBtn.addEventListener("click", () => {
+          if (!document.fullscreenElement) playerContainer.requestFullscreen();
+          else document.exitFullscreen();
+        });
+
+        function resetControlsTimeout() {
+          if (speedUpActive) return;
+          playerContainer.classList.remove("controls-hidden");
+          clearTimeout(controlsTimeout);
+          if (!videoEl.paused) {
+            controlsTimeout = setTimeout(() => {
+              playerContainer.classList.add("controls-hidden");
+            }, 1200); // Быстрое скрытие нижней панели (1.2 сек)
+          }
         }
 
-        let controlsInitialized = false;
+        playerContainer.addEventListener("mousemove", resetControlsTimeout);
 
-        function initPlayerControls() {
-            if (controlsInitialized) return;
-            controlsInitialized = true;
+        // УЛУЧШЕННОЕ УСКОРЕНИЕ (В ТОМ ЧИСЛЕ С ПАУЗЫ)
+        function startSpeedUp() {
+          if (videoEl.readyState < 2) return;
 
-            function formatTime(s) {
-                if (isNaN(s)) return "00:00";
-                const total = Math.floor(s);
-                const h = Math.floor(total / 3600);
-                const m = Math.floor((total % 3600) / 60);
-                const sec = total % 60;
-                if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-                return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+          isLongPress = true;
+          speedUpActive = true;
+          originalSpeed = parseFloat(speedSelect.value) || 1;
+          wasPausedBeforeSpeedUp = videoEl.paused;
+
+          videoEl.playbackRate = 2.0;
+          if (wasPausedBeforeSpeedUp) {
+            videoEl.play();
+          }
+
+          speedOverlay.classList.add("visible");
+          playerContainer.classList.add("controls-hidden");
+        }
+
+        function stopSpeedUp() {
+          if (speedUpActive) {
+            videoEl.playbackRate = originalSpeed;
+            speedUpActive = false;
+
+            if (wasPausedBeforeSpeedUp) {
+              videoEl.pause();
             }
 
-            function togglePlay() {
-                if (videoEl.paused) {
-                    videoEl.play();
-                    showActionFeedback(SVG_PLAY);
-                } else {
-                    videoEl.pause();
-                    showActionFeedback(SVG_PAUSE);
-                }
-            }
+            speedOverlay.classList.remove("visible");
+            resetControlsTimeout();
+          }
+        }
 
-            playPauseBtn.addEventListener('click', togglePlay);
+        // Добавляем переменные для отслеживания фокуса окна
+        let lastFocusTime = 0;
+        let ignoreClickAfterFocus = false;
 
-            videoEl.addEventListener('play', () => {
-                iconPlay.style.display = 'none';
-                iconPause.style.display = 'block';
-            });
+        // Отлавливаем момент, когда окно становится активным
+        window.addEventListener("focus", () => {
+          lastFocusTime = Date.now();
+        });
 
-            videoEl.addEventListener('pause', () => {
-                iconPlay.style.display = 'block';
-                iconPause.style.display = 'none';
-                resetControlsTimeout();
-            });
+        videoEl.addEventListener("mousedown", (e) => {
+          if (e.button !== 0) return;
 
-            videoEl.addEventListener('loadedmetadata', () => {
-                seekBar.max = videoEl.duration;
-                timeDisplay.textContent = `00:00 / ${formatTime(videoEl.duration)}`;
-            });
+          // Если с момента получения окном фокуса прошло меньше 200мс,
+          // значит это был клик для активации окна
+          if (Date.now() - lastFocusTime < 200) {
+            ignoreClickAfterFocus = true;
+            return; // Игнорируем запуск ускорения
+          }
 
-            videoEl.addEventListener('timeupdate', () => {
-                if (!isScrubbing) {
-                    seekBar.value = videoEl.currentTime;
-                    timeDisplay.textContent = `${formatTime(videoEl.currentTime)} / ${formatTime(videoEl.duration)}`;
-                }
-            });
+          ignoreClickAfterFocus = false;
+          isLongPress = false;
+          pressTimer = setTimeout(startSpeedUp, 250);
+        });
 
-            seekBar.addEventListener('mousedown', () => {
-                isScrubbing = true;
-            });
+        window.addEventListener("mouseup", (e) => {
+          if (e.button !== 0) return;
 
-            seekBar.addEventListener('mouseup', () => {
-                isScrubbing = false;
-            });
+          // Если этот клик был для активации окна, ничего не делаем
+          if (ignoreClickAfterFocus) {
+            ignoreClickAfterFocus = false; // сбрасываем флаг
+            return;
+          }
 
-            seekBar.addEventListener('input', () => {
-                timeDisplay.textContent = `${formatTime(seekBar.value)} / ${formatTime(videoEl.duration)}`;
-                videoEl.currentTime = seekBar.value;
-            });
+          clearTimeout(pressTimer);
+          if (speedUpActive) {
+            stopSpeedUp();
+          } else if (!isLongPress && e.target === videoEl) {
+            togglePlay();
+          }
+        });
+        playerContainer.addEventListener("mouseleave", () => {
+          clearTimeout(pressTimer);
+          stopSpeedUp();
+        });
 
-            seekBar.addEventListener('mouseenter', () => {
-                if (videoEl.readyState >= 1) {
-                    previewContainer.classList.add('visible');
-                }
-            });
+        videoEl.addEventListener("click", (e) => {
+          e.preventDefault();
+        });
 
-            seekBar.addEventListener('mouseleave', () => {
-                previewContainer.classList.remove('visible');
-            });
+        window.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+            return;
 
-            seekBar.addEventListener('mousemove', (e) => {
-                const rect = seekBar.getBoundingClientRect();
-                let offsetX = e.clientX - rect.left;
-                if (offsetX < 0) offsetX = 0;
-                if (offsetX > rect.width) offsetX = rect.width;
-                
-                const percentage = offsetX / rect.width;
-                const time = percentage * videoEl.duration;
-                
-                previewContainer.style.left = `${percentage * 100}%`;
-                previewTime.textContent = formatTime(time);
-                
-                if (previewVideo.readyState >= 1) {
-                    previewVideo.currentTime = time;
-                }
-            });
-
-            volumeBar.addEventListener('input', () => {
-                videoEl.volume = volumeBar.value;
-                videoEl.muted = (volumeBar.value == 0);
-            });
-
-            muteBtn.addEventListener('click', () => {
-                if (videoEl.muted || videoEl.volume === 0) {
-                    videoEl.muted = false;
-                    if (videoEl.volume === 0) {
-                        videoEl.volume = 0.05; // 5% если было 0
-                    }
-                } else {
-                    videoEl.muted = true;
-                }
-                
-                const vol = videoEl.muted ? 0 : videoEl.volume;
-                const svg = vol === 0 ? SVG_VOL_MUTE : (vol < 0.5 ? SVG_VOL_LOW : SVG_VOL_UP);
-                showActionFeedback(svg, Math.round(vol * 100) + '%');
-            });
-
-            videoEl.addEventListener('volumechange', () => {
-                const vol = videoEl.muted ? 0 : videoEl.volume;
-                volumeBar.value = vol;
-
-                iconVolUp.style.display = 'none';
-                iconVolLow.style.display = 'none';
-                iconMute.style.display = 'none';
-
-                if (vol === 0) {
-                    iconMute.style.display = 'block';
-                } else if (vol < 0.5) {
-                    iconVolLow.style.display = 'block';
-                } else {
-                    iconVolUp.style.display = 'block';
-                }
-            });
-
-            speedSelect.addEventListener('change', () => {
-                videoEl.playbackRate = parseFloat(speedSelect.value);
-            });
-
-            fullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement) playerContainer.requestFullscreen();
-                else document.exitFullscreen();
-            });
-
-            function resetControlsTimeout() {
-                if (speedUpActive) return; 
-                playerContainer.classList.remove('controls-hidden');
-                clearTimeout(controlsTimeout);
-                if (!videoEl.paused) {
-                    controlsTimeout = setTimeout(() => {
-                        playerContainer.classList.add('controls-hidden');
-                    }, 1200); // Быстрое скрытие нижней панели (1.2 сек)
-                }
-            }
-
-            playerContainer.addEventListener('mousemove', resetControlsTimeout);
-
-            // УЛУЧШЕННОЕ УСКОРЕНИЕ (В ТОМ ЧИСЛЕ С ПАУЗЫ)
-            function startSpeedUp() {
-                if (videoEl.readyState < 2) return;
-                
-                isLongPress = true;
-                speedUpActive = true;
-                originalSpeed = parseFloat(speedSelect.value) || 1;
-                wasPausedBeforeSpeedUp = videoEl.paused;
-                
-                videoEl.playbackRate = 2.0;
-                if (wasPausedBeforeSpeedUp) {
-                    videoEl.play();
-                }
-                
-                speedOverlay.classList.add('visible');
-                playerContainer.classList.add('controls-hidden');
-            }
-
-            function stopSpeedUp() {
-                if (speedUpActive) {
-                    videoEl.playbackRate = originalSpeed;
-                    speedUpActive = false;
-                    
-                    if (wasPausedBeforeSpeedUp) {
-                        videoEl.pause();
-                    }
-                    
-                    speedOverlay.classList.remove('visible');
-                    resetControlsTimeout();
-                }
-            }
-
-            videoEl.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
+          switch (e.code) {
+            case "Space":
+              e.preventDefault();
+              if (!e.repeat && !speedUpActive) {
                 isLongPress = false;
                 pressTimer = setTimeout(startSpeedUp, 250);
-            });
+              }
+              break;
+            case "KeyM":
+              muteBtn.click();
+              break;
+            case "KeyF":
+              fullscreenBtn.click();
+              break;
+            case "ArrowRight":
+              e.preventDefault();
+              videoEl.currentTime += 5;
+              showActionFeedback(SVG_FF, "+5с");
+              resetControlsTimeout();
+              break;
+            case "ArrowLeft":
+              e.preventDefault();
+              videoEl.currentTime -= 5;
+              showActionFeedback(SVG_REW, "-5с");
+              resetControlsTimeout();
+              break;
+            case "ArrowUp":
+              e.preventDefault();
+              videoEl.muted = false;
+              videoEl.volume = Math.min(1, videoEl.volume + 0.05);
+              const svgUp = videoEl.volume < 0.5 ? SVG_VOL_LOW : SVG_VOL_UP;
+              showActionFeedback(svgUp, Math.round(videoEl.volume * 100) + "%");
+              resetControlsTimeout();
+              break;
+            case "ArrowDown":
+              e.preventDefault();
+              videoEl.muted = false;
+              videoEl.volume = Math.max(0, videoEl.volume - 0.05);
+              const svgDown =
+                videoEl.volume === 0
+                  ? SVG_VOL_MUTE
+                  : videoEl.volume < 0.5
+                    ? SVG_VOL_LOW
+                    : SVG_VOL_UP;
+              showActionFeedback(
+                svgDown,
+                Math.round(videoEl.volume * 100) + "%",
+              );
+              resetControlsTimeout();
+              break;
+          }
+        });
 
-            window.addEventListener('mouseup', (e) => {
-                if (e.button !== 0) return;
-                clearTimeout(pressTimer);
-                if (speedUpActive) {
-                    stopSpeedUp();
-                } else if (!isLongPress && e.target === videoEl) {
-                    togglePlay();
-                }
-            });
-
-            playerContainer.addEventListener('mouseleave', () => {
-                clearTimeout(pressTimer);
-                stopSpeedUp();
-            });
-
-            videoEl.addEventListener('click', (e) => {
-                e.preventDefault();
-            });
-
-            window.addEventListener('keydown', (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-                
-                switch(e.code) {
-                    case 'Space':
-                        e.preventDefault();
-                        if (!e.repeat && !speedUpActive) {
-                            isLongPress = false;
-                            pressTimer = setTimeout(startSpeedUp, 250);
-                        }
-                        break;
-                    case 'KeyM': 
-                        muteBtn.click(); 
-                        break;
-                    case 'KeyF': 
-                        fullscreenBtn.click(); 
-                        break;
-                    case 'ArrowRight': 
-                        e.preventDefault();
-                        videoEl.currentTime += 5; 
-                        showActionFeedback(SVG_FF, '+5с');
-                        resetControlsTimeout();
-                        break;
-                    case 'ArrowLeft': 
-                        e.preventDefault();
-                        videoEl.currentTime -= 5; 
-                        showActionFeedback(SVG_REW, '-5с');
-                        resetControlsTimeout();
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        videoEl.muted = false;
-                        videoEl.volume = Math.min(1, videoEl.volume + 0.05);
-                        const svgUp = videoEl.volume < 0.5 ? SVG_VOL_LOW : SVG_VOL_UP;
-                        showActionFeedback(svgUp, Math.round(videoEl.volume * 100) + '%');
-                        resetControlsTimeout();
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        videoEl.muted = false;
-                        videoEl.volume = Math.max(0, videoEl.volume - 0.05);
-                        const svgDown = videoEl.volume === 0 ? SVG_VOL_MUTE : (videoEl.volume < 0.5 ? SVG_VOL_LOW : SVG_VOL_UP);
-                        showActionFeedback(svgDown, Math.round(videoEl.volume * 100) + '%');
-                        resetControlsTimeout();
-                        break;
-                }
-            });
-
-            window.addEventListener('keyup', (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-                if (e.code === 'Space') {
-                    e.preventDefault();
-                    clearTimeout(pressTimer);
-                    if (speedUpActive) {
-                        stopSpeedUp();
-                    } else if (!isLongPress) {
-                        togglePlay();
-                    }
-                }
-            });
-        }
-
-        let engineStarted = false;
-
-        function initSyncEngine() {
-            if (engineStarted) return;
-            engineStarted = true;
-
-            chatMessages.addEventListener('scroll', () => {
-                const threshold = 35;
-                isScrolledUp = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) > threshold;
-            });
-
-            function syncLoop() {
-                if (!videoEl.paused && !videoEl.ended) {
-                    const currentTime = videoEl.currentTime;
-                    const toRender = normalizedMessages.filter(m => m._timeSec > lastRenderedTime && m._timeSec <= currentTime);
-
-                    if (toRender.length > 0) {
-                        const fragment = document.createDocumentFragment();
-                        toRender.forEach(msg => fragment.appendChild(createMessageElement(msg)));
-                        chatMessages.appendChild(fragment);
-
-                        while (chatMessages.children.length > 400) {
-                            chatMessages.removeChild(chatMessages.firstChild);
-                        }
-
-                        if (!isScrolledUp) {
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
-                    }
-                    lastRenderedTime = currentTime;
-                }
-                requestAnimationFrame(syncLoop);
+        window.addEventListener("keyup", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+            return;
+          if (e.code === "Space") {
+            e.preventDefault();
+            clearTimeout(pressTimer);
+            if (speedUpActive) {
+              stopSpeedUp();
+            } else if (!isLongPress) {
+              togglePlay();
             }
-            requestAnimationFrame(syncLoop);
+          }
+        });
+      }
 
-            videoEl.addEventListener('seeked', () => {
-                const targetTime = videoEl.currentTime;
-                lastRenderedTime = targetTime;
-                chatMessages.innerHTML = ''; 
+      let engineStarted = false;
 
-                const allPriorMsgs = normalizedMessages.filter(m => m._timeSec <= targetTime);
-                const preservedBuffer = allPriorMsgs.slice(-300);
+      function initSyncEngine() {
+        if (engineStarted) return;
+        engineStarted = true;
 
-                if (preservedBuffer.length > 0) {
-                    const fragment = document.createDocumentFragment();
-                    preservedBuffer.forEach(msg => fragment.appendChild(createMessageElement(msg)));
-                    chatMessages.appendChild(fragment);
-                } else {
-                    renderSystemText('В этот момент в чате была тишина');
-                }
+        chatMessages.addEventListener("scroll", () => {
+          const threshold = 35;
+          isScrolledUp =
+            chatMessages.scrollHeight -
+              chatMessages.scrollTop -
+              chatMessages.clientHeight >
+            threshold;
+        });
+
+        function syncLoop() {
+          if (!videoEl.paused && !videoEl.ended) {
+            const currentTime = videoEl.currentTime;
+            const toRender = normalizedMessages.filter(
+              (m) => m._timeSec > lastRenderedTime && m._timeSec <= currentTime,
+            );
+
+            if (toRender.length > 0) {
+              const fragment = document.createDocumentFragment();
+              toRender.forEach((msg) =>
+                fragment.appendChild(createMessageElement(msg)),
+              );
+              chatMessages.appendChild(fragment);
+
+              while (chatMessages.children.length > 400) {
+                chatMessages.removeChild(chatMessages.firstChild);
+              }
+
+              if (!isScrolledUp) {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-        }
-
-        function createMessageElement(msg) {
-            const div = document.createElement('div');
-            div.className = 'message-container';
-
-            let timeStr = '00:00';
-            if (msg.time_text) {
-                timeStr = msg.time_text;
-            } else {
-                const totalSec = Math.floor(msg._timeSec || 0);
-                const h = Math.floor(totalSec / 3600);
-                const m = Math.floor((totalSec % 3600) / 60);
-                const s = totalSec % 60;
-                if (h > 0) timeStr = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-                else timeStr = `${m}:${String(s).padStart(2, '0')}`;
+              }
             }
+            lastRenderedTime = currentTime;
+          }
+          requestAnimationFrame(syncLoop);
+        }
+        requestAnimationFrame(syncLoop);
 
-            const author = msg.author || {};
-            const name = author.display_name || author.name || 'Аноним';
-            const color = author.colour || msg.colour || getUserColor(name);
+        videoEl.addEventListener("seeked", () => {
+          const targetTime = videoEl.currentTime;
+          lastRenderedTime = targetTime;
+          chatMessages.innerHTML = "";
 
-            let badgesHTML = '';
-            if (author.badges && author.badges.length > 0) {
-                author.badges.forEach(b => {
-                    if (b && b.icons && b.icons.length > 0 && b.icons[0].url) {
-                        badgesHTML += `<img src="${b.icons[0].url}" class="badge-icon" alt="badge">`;
-                    }
-                });
+          const allPriorMsgs = normalizedMessages.filter(
+            (m) => m._timeSec <= targetTime,
+          );
+          const preservedBuffer = allPriorMsgs.slice(-300);
+
+          if (preservedBuffer.length > 0) {
+            const fragment = document.createDocumentFragment();
+            preservedBuffer.forEach((msg) =>
+              fragment.appendChild(createMessageElement(msg)),
+            );
+            chatMessages.appendChild(fragment);
+          } else {
+            renderSystemText("В этот момент в чате была тишина");
+          }
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+      }
+
+      function createMessageElement(msg) {
+        const div = document.createElement('div');
+        div.className = 'message-container';
+
+        let timeStr = '00:00';
+        if (msg.time_text) {
+          timeStr = msg.time_text;
+        } else {
+          const totalSec = Math.floor(msg._timeSec || 0);
+          const h = Math.floor(totalSec / 3600);
+          const m = Math.floor((totalSec % 3600) / 60);
+          const s = totalSec % 60;
+          if (h > 0) timeStr = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          else timeStr = `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        const author = msg.author || {};
+        const name = author.display_name || author.name || 'Аноним';
+        const color = author.colour || msg.colour || getUserColor(name);
+
+        let badgesHTML = '';
+        if (author.badges && author.badges.length > 0) {
+          author.badges.forEach(b => {
+            if (b && b.icons && b.icons.length > 0 && b.icons[0].url) {
+              badgesHTML += `<img src="${b.icons[0].url}" class="badge-icon" alt="badge">`;
             }
-
-            div.innerHTML = `<span class="timestamp">${timeStr}</span>` +
-                            (badgesHTML ? `<span class="badges">${badgesHTML}</span>` : '') +
-                            `<span class="username" style="color: ${color}">${name}</span>` +
-                            `<span class="colon">:</span>` +
-                            `<span class="message-text">${msg.message}</span>`;
-            return div;
+          });
         }
 
-        function renderSystemText(text) {
-            const div = document.createElement('div');
-            div.className = 'system-message';
-            div.textContent = text;
-            chatMessages.appendChild(div);
-        }
+        // Парсим смайлики
+        const formattedMessage = parseEmotesFromJSON(msg.message, msg.emotes);
+
+        div.innerHTML = `<span class="timestamp">${timeStr}</span>` +
+                        (badgesHTML ? `<span class="badges">${badgesHTML}</span>` : '') +
+                        `<span class="username" style="color: ${color}">${name}</span>` +
+                        `<span class="colon">:</span>` +
+                        `<span class="message-text">${formattedMessage}</span>`;
+        return div;
+      }
+
+      function renderSystemText(text) {
+        const div = document.createElement("div");
+        div.className = "system-message";
+        div.textContent = text;
+        chatMessages.appendChild(div);
+      }
     </script>
-</body>
+  </body>
 </html>
