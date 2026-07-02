@@ -53,11 +53,11 @@
         const hasSavedVideo = await dbStore.get('video');
         const hasSavedChat = await dbStore.get('chat');
         const videoName = await dbStore.get('videoName') || 'Неизвестный видеофайл';
-        const chatName = await dbStore.get('chatName') || 'Неизвестный файл чата';
+        const chatName = await dbStore.get('chatName');
 
-        if (hasSavedVideo && hasSavedChat) {
+        if (hasSavedVideo) {
           document.getElementById('restore-video-name').textContent = videoName;
-          document.getElementById('restore-chat-name').textContent = chatName;
+          document.getElementById('restore-chat-name').textContent = chatName ? chatName : 'Отсутствует';
           document.getElementById('restore-container').style.display = 'block';
         }
       }).catch(err => {

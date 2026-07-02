@@ -1,5 +1,5 @@
       function checkFilesReady() {
-        startBtn.disabled = !(videoFile && chatData);
+        startBtn.disabled = !videoFile;
       }
 
       videoInput.addEventListener("change", (e) => {
@@ -33,7 +33,7 @@
         const objectUrl = URL.createObjectURL(videoFile);
         videoEl.src = objectUrl;
         previewVideo.src = objectUrl;
-        normalizedMessages = normalizeMessages(chatData);
+        normalizedMessages = chatData ? normalizeMessages(chatData) : [];
 
         startApp();
 
@@ -41,8 +41,8 @@
         try {
           await dbStore.set('video', videoFile);
           await dbStore.set('videoName', videoFile.name);
-          await dbStore.set('chat', JSON.stringify(chatData));
-          const chatName = chatInput.files[0] ? chatInput.files[0].name : 'chat.json';
+          await dbStore.set('chat', chatData ? JSON.stringify(chatData) : null);
+          const chatName = chatInput.files[0] ? chatInput.files[0].name : null;
           await dbStore.set('chatName', chatName);
         } catch (err) {
           console.warn("Could not save session to IndexedDB:", err);
@@ -63,8 +63,8 @@
             chatData = savedChatData; // Fallback if saved as object previously
           }
 
-          if (!videoFile || !chatData) {
-            alert('Не удалось прочитать сохраненные файлы из базы данных.');
+          if (!videoFile) {
+            alert('Не удалось прочитать сохраненное видео из базы данных.');
             restoreBtn.disabled = false;
             restoreBtn.textContent = 'Восстановить сессию';
             return;
@@ -81,7 +81,7 @@
           const objectUrl = URL.createObjectURL(videoFile);
           videoEl.src = objectUrl;
           previewVideo.src = objectUrl;
-          normalizedMessages = normalizeMessages(chatData);
+          normalizedMessages = chatData ? normalizeMessages(chatData) : [];
 
           startApp();
         } catch (error) {
