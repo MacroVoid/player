@@ -154,7 +154,7 @@
       }
 
       function createMessageElement(msg) {
-        // ── Новый компактный формат: системные события ──
+        // Новый компактный формат: системные события
         if (msg.act === 'del') {
           return msg.tid
             ? { type: 'meta', action: 'delete', targetId: msg.tid, reason: 'Сообщение удалено' }
@@ -166,7 +166,7 @@
           return { type: 'meta', action: 'ban', user: bannedName, reason: 'Пользователь забанен' };
         }
 
-        // ── Старый формат: системные события ──
+        // Старый формат: системные события
         const msgType = msg.message_type || msg.action_type;
         if (msgType === "clear_chat" || msgType === "ban_user") {
           const bannedUser = msg.banned_user;
@@ -188,7 +188,7 @@
           return null;
         }
 
-        // ── Общая часть: формируем время ──
+        // Общая часть: формируем время
         let timeStr = '00:00';
         if (msg.time_text) {
           timeStr = msg.time_text;
@@ -207,7 +207,7 @@
         const isCompact = msg.uid && !msg.author;
 
         if (isCompact) {
-          // ── Новый компактный формат: лениво читаем данные из chatMeta ──
+          // Новый компактный формат: лениво читаем данные из chatMeta
           const userInfo = chatMeta?.users?.[msg.uid] || {};
           name  = userInfo.name  || msg.uid;
           color = userInfo.color || getUserColor(name);
@@ -237,7 +237,7 @@
             }
           }
         } else {
-          // ── Старый формат ──
+          // Старый формат
           const author = msg.author || {};
           name  = author.display_name || author.name || 'Аноним';
           color = author.colour || msg.colour || getUserColor(name);
@@ -271,7 +271,7 @@
 
         if (!color) color = getUserColor(name);
 
-        // ── Общая сборка DOM ──
+        // Общая сборка DOM
         const div = document.createElement('div');
         div.className = 'message-container';
         div.setAttribute('data-username', name.toLowerCase());

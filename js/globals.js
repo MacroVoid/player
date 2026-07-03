@@ -60,6 +60,6 @@ const videoInput = document.getElementById("video-input");
       let gainNode = null;
       let audioSource = null;
 
-      // \u0414\u043b\u044f \u043d\u043e\u0432\u043e\u0433\u043e \u043e\u043f\u0442\u0438\u043c\u0438\u0437\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u043e\u0433\u043e \u0444\u043e\u0440\u043c\u0430\u0442\u0430 \u0447\u0430\u0442\u0430
-      let chatMeta = null;  // { badges: {...}, users: {...} } \u2014 \u043e\u0434\u0438\u043d \u0434\u043b\u044f \u0432\u0441\u0435\u0445 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0439
-      let midToMsg = null;  // Map<mid, msg> \u2014 \u0434\u043b\u044f O(1) \u043f\u043e\u0438\u0441\u043a\u0430 reply
+      // Для нового оптимизированного формата чата
+      let chatMeta = null;  // { badges: {...}, users: {...} } — один для всех сообщений
+      let midToMsg = null;  // Map<mid, msg> — для O(1) поиска reply

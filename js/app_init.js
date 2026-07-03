@@ -244,9 +244,9 @@
         let list = [];
         if (!data) return list;
 
-        // \u2500\u2500 \u041d\u043e\u0432\u044b\u0439 \u043e\u043f\u0442\u0438\u043c\u0438\u0437\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0439 \u0444\u043e\u0440\u043c\u0430\u0442: { badges, users, segments } \u2500\u2500
+        // Новый оптимизированный формат: { badges, users, segments }
         if (!Array.isArray(data) && data.segments && data.users) {
-          // \u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c \u0441\u043b\u043e\u0432\u0430\u0440\u0438 \u043a\u0430\u043a \u0435\u0434\u0438\u043d\u044b\u0439 \u0433\u043b\u043e\u0431\u0430\u043b\u044c\u043d\u044b\u0439 \u043e\u0431\u044a\u0435\u043a\u0442 \u2014 \u043d\u0438\u043a\u0430\u043a\u043e\u0433\u043e \u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f
+          // Сохраняем словари как единый глобальный объект — никакого копирования
           chatMeta = { badges: data.badges || {}, users: data.users || {} };
           midToMsg = new Map();
 
@@ -263,7 +263,7 @@
                 continue;
               }
 
-              // \u041e\u0431\u044b\u0447\u043d\u043e\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435: \u0445\u0440\u0430\u043d\u0438\u043c \u0442\u043e\u043b\u044c\u043a\u043e \u043a\u043e\u043c\u043f\u0430\u043a\u0442\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435
+              // Обычное сообщение: храним только компактные данные
               const entry = { _timeSec: timeSec, uid: m.uid, mid: m.mid, msg: m.msg };
               if (m.em)    entry.em    = m.em;
               if (m.rep)   entry.rep   = m.rep;
@@ -274,7 +274,7 @@
 
           list.sort((a, b) => a._timeSec - b._timeSec);
 
-          // \u0421\u0442\u0440\u043e\u0438\u043c Map \u043f\u043e\u0441\u043b\u0435 \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0438 \u2014 \u0434\u043b\u044f O(1) \u043f\u043e\u0438\u0441\u043a\u0430 reply
+          // Строим Map после сортировки — для O(1) поиска reply
           for (const entry of list) {
             if (entry.mid) midToMsg.set(entry.mid, entry);
           }
@@ -283,7 +283,7 @@
 
         if (!Array.isArray(data) || data.length === 0) return list;
 
-        // ── Формат TwitchDownloader (content.videoOffsetSeconds) ──
+        // Формат TwitchDownloader (content.videoOffsetSeconds)
         if (data[0].content && data[0].content.videoOffsetSeconds !== undefined) {
           data.forEach((item) => {
             if (item.content && item.content.videoOffsetSeconds !== undefined) {
@@ -298,7 +298,7 @@
           return list.sort((a, b) => a._timeSec - b._timeSec);
         }
 
-        // ── Старый формат: массив сегментов с messages (raw) ──
+        // Старый формат: массив сегментов с messages (raw)
         if (data[0].messages !== undefined) {
           let accDuration = 0;
           for (const frag of data) {
