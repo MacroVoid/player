@@ -93,36 +93,101 @@
           resetControlsTimeout();
         });
 
+
         videoEl.addEventListener("loadedmetadata", () => {
-          seekBar.max = videoEl.duration;
-          timeDisplay.textContent = `00:00 / ${formatTime(videoEl.duration)}`;
+          const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+          seekBar.max = duration;
+          timeDisplay.textContent = `00:00 / ${formatTime(duration)}`;
           updateSeekBarBackground(0);
 
-          if (targetSeekTime > 0 && targetSeekTime < videoEl.duration) {
-            videoEl.currentTime = targetSeekTime;
-            seekBar.value = targetSeekTime;
-            updateSeekBarBackground(targetSeekTime);
+          if (targetSeekTime > 0 && targetSeekTime < duration) {
+            let timeToSeek = targetSeekTime;
             targetSeekTime = 0;
+            seekToGlobalTime(timeToSeek);
           }
         });
 
         videoEl.addEventListener("timeupdate", () => {
+          let prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
+          let globalCurrentTime = prevPartsDuration + videoEl.currentTime;
+
           if (!isScrubbing) {
-            seekBar.value = videoEl.currentTime;
-            timeDisplay.textContent = `${formatTime(videoEl.currentTime)} / ${formatTime(videoEl.duration)}`;
-            updateSeekBarBackground(videoEl.currentTime);
+            seekBar.value = globalCurrentTime;
+            const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+            timeDisplay.textContent = `${formatTime(globalCurrentTime)} / ${formatTime(duration)}`;
+            updateSeekBarBackground(globalCurrentTime);
           }
-          if (videoFile && videoFile.name) {
-            localStorage.setItem(`vod_time_${videoFile.name}`, videoEl.currentTime);
+          if (videoFiles && videoFiles.length > 0 && videoFiles[0].name) {
+            localStorage.setItem(`vod_time_${videoFiles[0].name}`, globalCurrentTime);
           }
         });
 
-        function updatePreview(time, percentage) {
+        videoEl.addEventListener("ended", () => {
+          if (videoFiles && currentVideoIndex + 1 < videoFiles.length) {
+            currentVideoIndex++;
+            videoEl.src = videoObjectUrls[currentVideoIndex];
+            videoEl.currentTime = 0;
+            videoEl.play();
+          } else {
+            iconPlay.style.display = "block";
+            iconPause.style.display = "none";
+            resetControlsTimeout();
+          }
+        });
+
+        function getLocalTimeAndIndex(globalTime) {
+          if (!videoDurations || videoDurations.length === 0) return { index: 0, localTime: globalTime };
+          let acc = 0;
+          for (let i = 0; i < videoDurations.length; i++) {
+            if (globalTime < acc + videoDurations[i] || i === videoDurations.length - 1) {
+              return { index: i, localTime: Math.max(0, globalTime - acc) };
+            }
+            acc += videoDurations[i];
+          }
+          return { index: 0, localTime: 0 };
+        }
+
+        function seekToGlobalTime(globalTime) {
+          try {
+            if (typeof handleChatSeek === "function") {
+              handleChatSeek(globalTime);
+            }
+          } catch (err) {
+            console.error("Chat sync error during seek:", err);
+          }
+
+          try {
+            const { index, localTime } = getLocalTimeAndIndex(globalTime);
+            if (index !== currentVideoIndex && videoObjectUrls && videoObjectUrls.length > index) {
+              currentVideoIndex = index;
+              const wasPaused = videoEl.paused;
+              videoEl.src = videoObjectUrls[currentVideoIndex];
+              targetSeekTime = globalTime;
+              if (!wasPaused) {
+                 videoEl.play().catch(e => console.warn(e));
+              }
+            } else {
+              videoEl.currentTime = localTime;
+            }
+          } catch (err) {
+            console.error("Seek error:", err);
+            videoEl.currentTime = globalTime; // Fallback
+          }
+        }
+
+        function updatePreview(globalTime, percentage) {
           previewContainer.style.left = `${percentage * 100}%`;
-          previewTime.textContent = formatTime(time);
+          previewTime.textContent = formatTime(globalTime);
+
+          const { index, localTime } = getLocalTimeAndIndex(globalTime);
+          
+          if (videoObjectUrls && videoObjectUrls.length > 0 && previewVideo.dataset.currentIndex !== String(index)) {
+             previewVideo.src = videoObjectUrls[index];
+             previewVideo.dataset.currentIndex = index;
+          }
 
           if (previewVideo.readyState >= 1) {
-            previewVideo.currentTime = time;
+            previewVideo.currentTime = localTime;
           }
         }
 
@@ -145,10 +210,11 @@
           if (percentage < 0) percentage = 0;
           if (percentage > 1) percentage = 1;
           
-          const val = percentage * videoEl.duration;
+          const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+          const val = percentage * duration;
           seekBar.value = val;
-          videoEl.currentTime = val;
-          timeDisplay.textContent = `${formatTime(val)} / ${formatTime(videoEl.duration)}`;
+          seekToGlobalTime(val);
+          timeDisplay.textContent = `${formatTime(val)} / ${formatTime(duration)}`;
           
           updatePreview(val, percentage);
           updateSeekBarBackground(val);
@@ -160,11 +226,12 @@
 
         seekBar.addEventListener("input", () => {
           const val = parseFloat(seekBar.value);
-          timeDisplay.textContent = `${formatTime(val)} / ${formatTime(videoEl.duration)}`;
-          videoEl.currentTime = val;
+          const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+          timeDisplay.textContent = `${formatTime(val)} / ${formatTime(duration)}`;
+          seekToGlobalTime(val);
 
           // Force update preview to match the thumb exactly when dragging
-          const percentage = val / videoEl.duration;
+          const percentage = val / duration;
           updatePreview(val, percentage);
           updateSeekBarBackground(val);
         });
@@ -199,7 +266,8 @@
           if (percentage < 0) percentage = 0;
           if (percentage > 1) percentage = 1;
 
-          const time = percentage * videoEl.duration;
+          const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+          const time = percentage * duration;
 
           updatePreview(time, percentage);
         });
@@ -391,13 +459,21 @@
               break;
             case "ArrowRight":
               e.preventDefault();
-              videoEl.currentTime += 5;
+              {
+                let prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
+                let globalCurrentTime = prevPartsDuration + videoEl.currentTime;
+                seekToGlobalTime(globalCurrentTime + 5);
+              }
               showActionFeedback(SVG_FF, "+5с");
               resetControlsTimeout();
               break;
             case "ArrowLeft":
               e.preventDefault();
-              videoEl.currentTime -= 5;
+              {
+                let prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
+                let globalCurrentTime = prevPartsDuration + videoEl.currentTime;
+                seekToGlobalTime(globalCurrentTime - 5);
+              }
               showActionFeedback(SVG_REW, "-5с");
               resetControlsTimeout();
               break;

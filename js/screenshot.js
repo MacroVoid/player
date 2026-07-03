@@ -53,6 +53,10 @@
       chatMessagesEl.addEventListener('click', (e) => {
         if (!isScreenshotMode) return;
         
+        if (e.target.closest('.toggle-deleted-btn')) {
+          return; // Let the button click work
+        }
+        
         const chatMsg = e.target.closest('.message-container');
         if (chatMsg) {
           e.preventDefault();

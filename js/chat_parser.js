@@ -117,7 +117,13 @@
         // Собираем все позиции всех смайликов в один массив
         emotesData.forEach(emote => {
           if (!emote.locations) return;
-          const positions = emote.locations.split(',');
+          let positions = [];
+          if (Array.isArray(emote.locations)) {
+            positions = emote.locations;
+          } else if (typeof emote.locations === 'string') {
+            positions = emote.locations.split(',');
+          }
+          
           positions.forEach(pos => {
             const [start, end] = pos.split('-');
             emoteArr.push({
@@ -153,19 +159,35 @@
         return resultHTML;
       }
 
-      function normalizeMessages(data) {
-        const result = [];
-        if (!data || !Array.isArray(data)) return result;
-        data.forEach((item) => {
-          if (item.content && item.content.videoOffsetSeconds !== undefined) {
-            result.push({
-              _timeSec: item.content.videoOffsetSeconds,
-              author: { name: item.commenter?.displayName || "Аноним" },
-              message: item.message?.body || "",
-              emotes: item.message?.emoticons || []
-            });
+      // \u041f\u0430\u0440\u0441\u0435\u0440 \u0441\u043c\u0430\u0439\u043b\u0438\u043a\u043e\u0432 \u0434\u043b\u044f \u043d\u043e\u0432\u043e\u0433\u043e \u043a\u043e\u043c\u043f\u0430\u043a\u0442\u043d\u043e\u0433\u043e \u0444\u043e\u0440\u043c\u0430\u0442\u0430: em = { "id": ["0-8", "10-18"] }
+      // \u0418\u0437\u0431\u0435\u0433\u0430\u0435\u043c \u043f\u0440\u043e\u043c\u0435\u0436\u0443\u0442\u043e\u0447\u043d\u043e\u0435 \u043f\u0440\u0435\u043e\u0431\u0440\u0430\u0437\u043e\u0432\u0430\u043d\u0438\u0435 \u0432 \u0441\u0442\u0430\u0440\u044b\u0439 \u0444\u043e\u0440\u043c\u0430\u0442 — \u0447\u0438\u0442\u0430\u0435\u043c \u043d\u0430\u043f\u0440\u044f\u043c\u0443\u044e
+      function parseEmotesFromDict(text, emDict) {
+        if (!text) return '';
+        if (!emDict || Object.keys(emDict).length === 0) {
+          return parseLinksAndEscape(text);
+        }
+
+        const emoteArr = [];
+        for (const [id, locs] of Object.entries(emDict)) {
+          for (const loc of locs) {
+            const [start, end] = loc.split('-');
+            emoteArr.push({ id, start: parseInt(start), end: parseInt(end) });
           }
-        });
-        result.sort((a, b) => a._timeSec - b._timeSec);
-        return result;
+        }
+        emoteArr.sort((a, b) => a.start - b.start);
+
+        let resultHTML = '';
+        let currentIndex = 0;
+        for (const emp of emoteArr) {
+          if (emp.start > currentIndex) {
+            resultHTML += parseLinksAndEscape(text.substring(currentIndex, emp.start));
+          }
+          resultHTML += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emp.id}/default/dark/1.0" class="emote" alt="emote">`;
+          currentIndex = emp.end + 1;
+        }
+        if (currentIndex < text.length) {
+          resultHTML += parseLinksAndEscape(text.substring(currentIndex));
+        }
+        return resultHTML;
       }
+

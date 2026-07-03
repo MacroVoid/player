@@ -20,14 +20,15 @@
       <div class="upload-card">
         <h2>VOD Player</h2>
         <div class="file-group">
-          <label>Видеофайл</label>
-          <input type="file" id="video-input" accept="video/*" />
+          <label>Видеофайл (можно выбрать несколько частей)</label>
+          <input type="file" id="video-input" accept="video/*" multiple />
         </div>
         <div class="file-group">
-          <label>Файл чата JSON (необязательно)</label>
-          <input type="file" id="chat-input" accept=".json" />
+          <label>Файлы чата JSON (необязательно, можно несколько)</label>
+          <input type="file" id="chat-input" accept=".json" multiple />
         </div>
         <button class="btn-start" id="start-btn" disabled>Запустить</button>
+        <div id="loading-indicator" style="display: none; margin-top: 10px; color: var(--accent-color); font-weight: bold; text-align: center;">Подготовка видео...</div>
         <button class="btn-demo" id="demo-btn">
           Демо режим (Быстрый просмотр)
         </button>
@@ -74,6 +75,7 @@
               <video id="preview-video" muted playsinline></video>
               <div class="preview-time" id="preview-time">00:00</div>
             </div>
+            <div id="timeline-markers" style="position: absolute; inset: 0; pointer-events: none; z-index: 2; display: flex; align-items: center;"></div>
             <input
               type="range"
               class="seek-bar"

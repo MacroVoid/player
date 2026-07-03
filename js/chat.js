@@ -30,9 +30,20 @@
           }
         });
 
+        function getGlobalCurrentTime() {
+          if (typeof targetSeekTime !== "undefined" && targetSeekTime > 0) {
+            return targetSeekTime;
+          }
+          if (typeof videoDurations === "undefined" || videoDurations.length === 0) {
+            return videoEl.currentTime;
+          }
+          const prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
+          return prevPartsDuration + videoEl.currentTime;
+        }
+
         function syncLoop() {
           if (!videoEl.paused && !videoEl.ended) {
-            const currentTime = videoEl.currentTime;
+            const currentTime = getGlobalCurrentTime();
             const toRender = normalizedMessages.filter(
               (m) => m._timeSec > lastRenderedTime && m._timeSec <= currentTime,
             );
@@ -40,9 +51,14 @@
             if (toRender.length > 0) {
               const fragment = document.createDocumentFragment();
               toRender.forEach((msg) => {
-                fragment.appendChild(createMessageElement(msg));
-                if (typeof activeProfileUser !== 'undefined' && activeProfileUser && isSameUser(msg.author, activeProfileUser)) {
-                  appendMessageToProfileList(msg);
+                const el = createMessageElement(msg);
+                if (el instanceof Node) {
+                  fragment.appendChild(el);
+                  if (typeof activeProfileUser !== 'undefined' && activeProfileUser && isSameUser(msg, activeProfileUser)) {
+                    appendMessageToProfileList(msg);
+                  }
+                } else if (el && el.type === 'meta') {
+                  handleMetaEvent(el, fragment, chatMessages);
                 }
               });
               chatMessages.appendChild(fragment);
@@ -63,39 +79,116 @@
         }
         requestAnimationFrame(syncLoop);
 
-        videoEl.addEventListener("seeked", () => {
-          const targetTime = videoEl.currentTime;
-          lastRenderedTime = targetTime;
-          chatMessages.innerHTML = "";
+        // Инициализируем чат сразу при запуске, чтобы он не был пустым, если первое сообщение нескоро
+        if (typeof handleChatSeek === "function") {
+          handleChatSeek(getGlobalCurrentTime());
+        }
+      }
 
-          const allPriorMsgs = normalizedMessages.filter(
-            (m) => m._timeSec <= targetTime,
-          );
-          const preservedBuffer = allPriorMsgs.slice(-300);
+      function handleMetaEvent(meta, fragment, container) {
+        if (meta.action === 'ban') {
+           const targetUsername = meta.user.toLowerCase();
+           fragment.querySelectorAll('.message-container').forEach(el => {
+             if (el.getAttribute('data-username') === targetUsername) {
+                markMessageAsDeleted(el, meta.reason);
+             }
+           });
+           container.querySelectorAll('.message-container').forEach(el => {
+             if (el.getAttribute('data-username') === targetUsername) {
+                markMessageAsDeleted(el, meta.reason);
+             }
+           });
+        } else if (meta.action === 'delete') {
+           const targetId = meta.targetId;
+           fragment.querySelectorAll('.message-container').forEach(el => {
+             if (el.getAttribute('data-msg-id') === targetId) {
+                markMessageAsDeleted(el, meta.reason);
+             }
+           });
+           container.querySelectorAll('.message-container').forEach(el => {
+             if (el.getAttribute('data-msg-id') === targetId) {
+                markMessageAsDeleted(el, meta.reason);
+             }
+           });
+        }
+      }
 
-          if (preservedBuffer.length > 0) {
-            const fragment = document.createDocumentFragment();
-            preservedBuffer.forEach((msg) =>
-              fragment.appendChild(createMessageElement(msg)),
-            );
-            chatMessages.appendChild(fragment);
-          } else {
-            renderSystemText("В этот момент в чате была тишина");
-          }
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-          jumpToBottomBtn.classList.remove("visible");
+      function markMessageAsDeleted(el, reason) {
+        if (el.classList.contains('deleted-message-container')) return;
+        el.classList.add('deleted-message-container');
 
-          // Обновляем сообщения в открытом профиле при перемотке
-          if (typeof activeProfileUser !== 'undefined' && activeProfileUser) {
-            updateProfileMessages(activeProfileUser);
-          }
+        // Определяем тип удаления для цветовой полоски
+        const isBan = reason && (reason.includes('забан') || reason.includes('Отстран'));
+        if (isBan) el.classList.add('deleted-type-ban');
+
+        // Сохраняем исходный контент
+        const originalContent = document.createElement('div');
+        originalContent.className = 'original-message-content';
+        while (el.firstChild) originalContent.appendChild(el.firstChild);
+
+        // Планка-уведомление
+        const notice = document.createElement('div');
+        notice.className = 'deleted-notice';
+        notice.innerHTML = `
+          <span class="deleted-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          </span>
+          <span class="deleted-reason">${reason || 'Сообщение удалено'}</span>
+          <button class="toggle-deleted-btn" aria-label="Показать сообщение">Показать</button>
+        `;
+
+        const toggleBtn = notice.querySelector('.toggle-deleted-btn');
+        let isOpen = false;
+
+        toggleBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          isOpen = !isOpen;
+          originalContent.classList.toggle('visible', isOpen);
+          toggleBtn.textContent = isOpen ? 'Скрыть' : 'Показать';
+          toggleBtn.classList.toggle('active', isOpen);
         });
+
+        el.appendChild(notice);
+        el.appendChild(originalContent);
       }
 
       function createMessageElement(msg) {
-        const div = document.createElement('div');
-        div.className = 'message-container';
+        // ── Новый компактный формат: системные события ──
+        if (msg.act === 'del') {
+          return msg.tid
+            ? { type: 'meta', action: 'delete', targetId: msg.tid, reason: 'Сообщение удалено' }
+            : null;
+        }
+        if (msg.act === 'ban') {
+          if (!msg.tid) return null;
+          const bannedName = chatMeta?.users?.[msg.tid]?.name || msg.tid;
+          return { type: 'meta', action: 'ban', user: bannedName, reason: 'Пользователь забанен' };
+        }
 
+        // ── Старый формат: системные события ──
+        const msgType = msg.message_type || msg.action_type;
+        if (msgType === "clear_chat" || msgType === "ban_user") {
+          const bannedUser = msg.banned_user;
+          if (bannedUser) {
+             return {
+                type: 'meta',
+                action: 'ban',
+                user: bannedUser,
+                reason: msg.ban_type === "timeout" ? `Отстранён на ${msg.ban_duration || '?'} сек` : "Пользователь забанен"
+             };
+          }
+          return null;
+        }
+        if (msgType === "clear_message" || msgType === "delete_message") {
+          const targetId = msg.target_message_id;
+          if (targetId) {
+             return { type: 'meta', action: 'delete', targetId, reason: "Сообщение удалено" };
+          }
+          return null;
+        }
+
+        // ── Общая часть: формируем время ──
         let timeStr = '00:00';
         if (msg.time_text) {
           timeStr = msg.time_text;
@@ -104,31 +197,118 @@
           const h = Math.floor(totalSec / 3600);
           const m = Math.floor((totalSec % 3600) / 60);
           const s = totalSec % 60;
-          if (h > 0) timeStr = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-          else timeStr = `${m}:${String(s).padStart(2, '0')}`;
+          timeStr = h > 0
+            ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+            : `${m}:${String(s).padStart(2,'0')}`;
         }
 
-        const author = msg.author || {};
-        const name = author.display_name || author.name || 'Аноним';
-        const color = author.colour || msg.colour || getUserColor(name);
+        let name, color, badgesHTML = '', formattedMessage, replyHTML = '', msgId;
 
-        let badgesHTML = '';
-        if (author.badges && author.badges.length > 0) {
-          author.badges.forEach(b => {
-            if (b && b.icons && b.icons.length > 0 && b.icons[0].url) {
-              badgesHTML += `<img src="${b.icons[0].url}" class="badge-icon" alt="badge">`;
+        const isCompact = msg.uid && !msg.author;
+
+        if (isCompact) {
+          // ── Новый компактный формат: лениво читаем данные из chatMeta ──
+          const userInfo = chatMeta?.users?.[msg.uid] || {};
+          name  = userInfo.name  || msg.uid;
+          color = userInfo.color || getUserColor(name);
+          msgId = msg.mid;
+
+          (userInfo.badges || []).forEach(key => {
+            const uuid = chatMeta?.badges?.[key];
+            if (uuid) badgesHTML += `<img src="https://static-cdn.jtvnw.net/badges/v1/${uuid}/1" class="badge-icon" alt="badge">`;
+          });
+
+          formattedMessage = parseEmotesFromDict(msg.msg || '', msg.em);
+
+          if (msg.rep) {
+            const repliedMsg = midToMsg?.get(msg.rep);
+            if (repliedMsg) {
+              const repliedUser = chatMeta?.users?.[repliedMsg.uid];
+              const repliedName = repliedUser?.name || repliedMsg.uid || 'Аноним';
+              let replyText = escapeHTML(repliedMsg.msg || '');
+              const escapedMention = escapeHTML(`@${repliedName}`);
+              const lowerFormatted = formattedMessage.toLowerCase();
+              if (lowerFormatted.startsWith(escapedMention.toLowerCase() + ' ')) {
+                formattedMessage = formattedMessage.substring(escapedMention.length + 1);
+              } else if (lowerFormatted.startsWith(escapedMention.toLowerCase() + ', ')) {
+                formattedMessage = formattedMessage.substring(escapedMention.length + 2);
+              }
+              replyHTML = `<div class="chat-reply" data-reply-id="${escapeHTML(msg.rep)}"><span class="reply-author">@${escapeHTML(repliedName)}:</span><span class="reply-text">${replyText}</span></div>`;
+            }
+          }
+        } else {
+          // ── Старый формат ──
+          const author = msg.author || {};
+          name  = author.display_name || author.name || 'Аноним';
+          color = author.colour || msg.colour || getUserColor(name);
+          msgId = msg.message_id;
+
+          if (author.badges && author.badges.length > 0) {
+            author.badges.forEach(b => {
+              if (b && b.icons && b.icons.length > 0 && b.icons[0].url) {
+                badgesHTML += `<img src="${b.icons[0].url}" class="badge-icon" alt="badge">`;
+              }
+            });
+          }
+
+          formattedMessage = parseEmotesFromJSON(msg.message, msg.emotes);
+
+          if (msg.in_reply_to) {
+            const replyAuthorName = msg.in_reply_to.author
+              ? (msg.in_reply_to.author.display_name || msg.in_reply_to.author.name || 'Аноним')
+              : 'Аноним';
+            let replyText = escapeHTML(msg.in_reply_to.message || '');
+            const escapedMention = escapeHTML(`@${replyAuthorName}`);
+            const lowerFormatted = formattedMessage.toLowerCase();
+            if (lowerFormatted.startsWith(escapedMention.toLowerCase() + ' ')) {
+              formattedMessage = formattedMessage.substring(escapedMention.length + 1);
+            } else if (lowerFormatted.startsWith(escapedMention.toLowerCase() + ', ')) {
+              formattedMessage = formattedMessage.substring(escapedMention.length + 2);
+            }
+            replyHTML = `<div class="chat-reply" data-reply-id="${escapeHTML(msg.in_reply_to.message_id || '')}"><span class="reply-author">@${escapeHTML(replyAuthorName)}:</span><span class="reply-text">${replyText}</span></div>`;
+          }
+        }
+
+        if (!color) color = getUserColor(name);
+
+        // ── Общая сборка DOM ──
+        const div = document.createElement('div');
+        div.className = 'message-container';
+        div.setAttribute('data-username', name.toLowerCase());
+        if (msgId) div.setAttribute('data-msg-id', msgId);
+
+        div.innerHTML = replyHTML +
+                        `<span class="timestamp">${timeStr}</span>` +
+                        (badgesHTML ? `<span class="badges">${badgesHTML}</span>` : '') +
+                        `<span class="username" style="color: ${color}">${escapeHTML(name)}</span>` +
+                        `<span class="colon">:</span>` +
+                        `<span class="message-text">${formattedMessage}</span>`;
+
+        const replyEl = div.querySelector('.chat-reply');
+        if (replyEl) {
+          replyEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const replyId = replyEl.getAttribute('data-reply-id');
+            const targetMsg = document.querySelector(`.message-container[data-msg-id="${replyId}"]`);
+            if (targetMsg) {
+              const chatMessagesEl = document.getElementById('chat-messages');
+              if (chatMessagesEl) {
+                const containerRect = chatMessagesEl.getBoundingClientRect();
+                const targetRect = targetMsg.getBoundingClientRect();
+                chatMessagesEl.scrollTo({
+                  top: chatMessagesEl.scrollTop + (targetRect.top - containerRect.top) - (containerRect.height / 2) + (targetRect.height / 2),
+                  behavior: 'smooth'
+                });
+              } else {
+                targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+              targetMsg.style.transition = 'background-color 0.3s ease';
+              targetMsg.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+              setTimeout(() => { targetMsg.style.backgroundColor = ''; }, 2000);
             }
           });
         }
 
-        // Парсим смайлики
-        const formattedMessage = parseEmotesFromJSON(msg.message, msg.emotes);
-
-        div.innerHTML = `<span class="timestamp">${timeStr}</span>` +
-                        (badgesHTML ? `<span class="badges">${badgesHTML}</span>` : '') +
-                        `<span class="username" style="color: ${color}">${name}</span>` +
-                        `<span class="colon">:</span>` +
-                        `<span class="message-text">${formattedMessage}</span>`;
         return div;
       }
 
@@ -606,8 +786,15 @@
         }
       });
 
-      function isSameUser(author, username) {
-        if (!author) return false;
+      function isSameUser(msg, username) {
+        if (!msg) return false;
+        // Новый компактный формат: есть uid, нет author
+        if (msg.uid && !msg.author) {
+          const name = chatMeta?.users?.[msg.uid]?.name || msg.uid;
+          return name.toLowerCase() === username.toLowerCase();
+        }
+        // Старый формат: msg.author или передан объект author
+        const author = msg.author || msg;
         const name = author.display_name || author.name || 'Аноним';
         return name.toLowerCase() === username.toLowerCase();
       }
@@ -637,10 +824,15 @@
           else timeStr = `${m}:${String(s).padStart(2, '0')}`;
         }
 
-        const formattedMessage = parseEmotesFromJSON(msg.message, msg.emotes);
+        // Поддерживаем оба формата
+        const isCompact = msg.uid && !msg.author;
+        const msgText = isCompact ? (msg.msg || '') : (msg.message || '');
+        const formattedMessage = isCompact
+          ? parseEmotesFromDict(msgText, msg.em)
+          : parseEmotesFromJSON(msgText, msg.emotes);
 
         div.innerHTML = `<span class="profile-message-time">${timeStr}</span>` +
-                        `<span class="profile-message-text" data-raw="${escapeHTML(msg.message)}">${formattedMessage}</span>` +
+                        `<span class="profile-message-text" data-raw="${escapeHTML(msgText)}">${formattedMessage}</span>` +
                         `<button class="copy-msg-btn" title="Копировать сообщение">` +
                         `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>` +
                         `</button>`;
@@ -653,9 +845,22 @@
         if (!msgListEl) return;
         
         msgListEl.innerHTML = '';
-        const currentTime = videoEl.currentTime;
+        
+        // Define or reference getGlobalCurrentTime
+        const getGlobalTime = () => {
+          if (typeof targetSeekTime !== "undefined" && targetSeekTime > 0) {
+            return targetSeekTime;
+          }
+          if (typeof videoDurations === "undefined" || videoDurations.length === 0) {
+            return videoEl.currentTime;
+          }
+          const prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
+          return prevPartsDuration + videoEl.currentTime;
+        };
+        
+        const currentTime = getGlobalTime();
         const userMessages = normalizedMessages.filter(msg => {
-          return isSameUser(msg.author, username) && msg._timeSec <= currentTime;
+          return isSameUser(msg, username) && msg._timeSec <= currentTime;
         });
 
         if (userMessages.length === 0) {
@@ -779,5 +984,55 @@
         } else {
           roleEl.textContent = 'Зритель';
           descEl.textContent = 'Канал не найден или не удалось загрузить описание из Twitch.';
+        }
+      }
+
+      let chatSeekDebounceTimer = null;
+
+      function handleChatSeek(globalTime) {
+        if (isNaN(globalTime)) return;
+        
+        // Update immediately so syncLoop knows we've seeked
+        lastRenderedTime = globalTime;
+
+        if (chatSeekDebounceTimer) {
+          clearTimeout(chatSeekDebounceTimer);
+        }
+
+        // Debounce the heavy DOM operations to prevent chat from disappearing during rapid scrubbing
+        chatSeekDebounceTimer = setTimeout(() => {
+          executeChatSeek(globalTime);
+        }, 150);
+      }
+
+      function executeChatSeek(globalTime) {
+        chatMessages.innerHTML = "";
+
+        const allPriorMsgs = normalizedMessages.filter(
+          (m) => m._timeSec <= globalTime,
+        );
+        const preservedBuffer = allPriorMsgs.slice(-300);
+
+        if (preservedBuffer.length > 0) {
+          const fragment = document.createDocumentFragment();
+          preservedBuffer.forEach((msg) => {
+            const el = createMessageElement(msg);
+            if (el instanceof Node) {
+              fragment.appendChild(el);
+            } else if (el && el.type === 'meta') {
+              handleMetaEvent(el, fragment, chatMessages);
+            }
+          });
+          chatMessages.appendChild(fragment);
+        } else {
+          renderSystemText("В этот момент в чате была тишина");
+        }
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        isScrolledUp = false;
+        jumpToBottomBtn.classList.remove("visible");
+
+        // Обновляем сообщения в открытом профиле при перемотке
+        if (typeof activeProfileUser !== 'undefined' && activeProfileUser) {
+          updateProfileMessages(activeProfileUser);
         }
       }
