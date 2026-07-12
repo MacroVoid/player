@@ -250,6 +250,8 @@
           chatMeta = { badges: data.badges || {}, users: data.users || {} };
           midToMsg = new Map();
 
+          const currentStates = {}; // Для отслеживания изменений цвета и бейджей
+
           for (const seg of data.segments) {
             for (const m of (seg.messages || [])) {
               const timeSec = (m.t || 0) / 1000;
@@ -263,11 +265,24 @@
                 continue;
               }
 
+              if (m.b) {
+                if (!currentStates[m.uid]) currentStates[m.uid] = {};
+                currentStates[m.uid].b = m.b;
+              }
+              if (m.c) {
+                if (!currentStates[m.uid]) currentStates[m.uid] = {};
+                currentStates[m.uid].c = m.c;
+              }
+
               // Обычное сообщение: храним только компактные данные
               const entry = { _timeSec: timeSec, uid: m.uid, mid: m.mid, msg: m.msg };
               if (m.em)    entry.em    = m.em;
               if (m.rep)   entry.rep   = m.rep;
               if (m.first) entry.first = true;
+
+              if (currentStates[m.uid]?.b) entry.b = currentStates[m.uid].b;
+              if (currentStates[m.uid]?.c) entry.c = currentStates[m.uid].c;
+
               list.push(entry);
             }
           }
@@ -300,6 +315,12 @@
 
         // Старый формат: массив сегментов с messages (raw)
         if (data[0].messages !== undefined) {
+          // Пропускаем через наш конвертер в новый формат!
+          if (typeof parseTwitchChatToOptimized === 'function') {
+            const optimized = parseTwitchChatToOptimized(data);
+            return normalizeMessages(optimized);
+          }
+
           let accDuration = 0;
           for (const frag of data) {
             const msgs = frag.messages || [];

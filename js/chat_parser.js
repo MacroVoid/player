@@ -191,3 +191,154 @@
         return resultHTML;
       }
 
+      function parseTwitchChatToOptimized(rawSegments) {
+        const badges = {};
+        const users = {};
+        const user_states = {};
+        const segments = [];
+
+        for (const segment of rawSegments) {
+          if (!segment.messages) continue;
+
+          const outSegment = {
+            type: segment.type || "video",
+            video_start: segment.video_start || 0.0,
+            video_duration: segment.video_duration || 0.0,
+            original_start: segment.original_start || 0.0,
+            original_duration: segment.original_duration || 0.0,
+            original_timestamp: segment.original_timestamp || 0,
+            messages: []
+          };
+
+          for (const msg of segment.messages) {
+            const msgType = msg.message_type || msg.action_type;
+            const msgTimestamp = msg.timestamp !== undefined ? msg.timestamp : (segment.original_timestamp || 0);
+            const t = Math.floor(outSegment.video_start * 1000) + Math.floor((msgTimestamp - outSegment.original_timestamp) / 1000);
+
+            if (msgType === "clear_chat" || msgType === "ban_user") {
+              const tid = msg.banned_user || msg.target_id || (msg.author && msg.author.target_id) || (msg.author && msg.author.id);
+              if (tid) {
+                outSegment.messages.push({ t, act: "ban", tid: String(tid) });
+              }
+              continue;
+            }
+
+            if (msgType === "clear_message" || msgType === "delete_message") {
+              if (msg.target_message_id) {
+                outSegment.messages.push({ t, act: "del", tid: msg.target_message_id });
+              }
+              continue;
+            }
+
+            if (msgType !== "text_message" && msgType !== "highlighted_message") {
+              continue;
+            }
+
+            const author = msg.author || {};
+            const uid = String(author.id || "");
+            if (!uid) continue;
+
+            let current_badges = [];
+            if (author.badges && Array.isArray(author.badges)) {
+              for (const b of author.badges) {
+                if (!b.name || b.version === undefined) continue;
+                const badgeKey = `${b.name}:${b.version}`;
+                current_badges.push(badgeKey);
+                
+                if (!badges[badgeKey]) {
+                  if (b.icons && b.icons.length > 0 && b.icons[0].url) {
+                    const url = b.icons[0].url;
+                    const match = url.match(/\/v1\/([a-fA-F0-9\-]+)\//);
+                    if (match) {
+                      badges[badgeKey] = match[1];
+                    } else {
+                      const parts = url.split('/');
+                      badges[badgeKey] = parts[parts.length - 2] || url;
+                    }
+                  } else {
+                    badges[badgeKey] = "unknown-badge";
+                  }
+                }
+              }
+            }
+
+            let current_color = msg.colour || msg.color || author.colour || author.color || getUserColor(author.display_name || author.name);
+
+            let b_changed = false;
+            let c_changed = false;
+
+            if (!user_states[uid]) {
+              user_states[uid] = {
+                color: current_color,
+                badges: [...current_badges]
+              };
+              users[uid] = {
+                name: author.display_name || author.name || "Аноним",
+                color: current_color,
+                badges: [...current_badges]
+              };
+            } else {
+              const state = user_states[uid];
+              if (state.color !== current_color) {
+                c_changed = true;
+                state.color = current_color;
+              }
+              
+              const badgesSame = state.badges.length === current_badges.length && state.badges.every((val, i) => val === current_badges[i]);
+              if (!badgesSame) {
+                b_changed = true;
+                state.badges = [...current_badges];
+              }
+            }
+
+            const outMsg = {
+              t: t,
+              uid: uid,
+              mid: msg.message_id || msg.id,
+              msg: msg.message || ""
+            };
+
+            if (msg.is_first_message) {
+              outMsg.first = true;
+            }
+
+            if (msg.in_reply_to && msg.in_reply_to.message_id) {
+              outMsg.rep = msg.in_reply_to.message_id;
+            }
+
+            if (msg.emotes && Array.isArray(msg.emotes) && msg.emotes.length > 0) {
+              const emObj = {};
+              for (const em of msg.emotes) {
+                if (em.id) {
+                  let locations = [];
+                  if (Array.isArray(em.locations)) {
+                    locations = em.locations;
+                  } else if (typeof em.locations === 'string') {
+                    locations = em.locations.split(',');
+                  }
+                  if (locations.length > 0) {
+                    emObj[em.id] = locations;
+                  }
+                }
+              }
+              if (Object.keys(emObj).length > 0) {
+                outMsg.em = emObj;
+              }
+            }
+
+            if (b_changed) {
+              outMsg.b = [...current_badges];
+            }
+
+            if (c_changed) {
+              outMsg.c = current_color;
+            }
+
+            outSegment.messages.push(outMsg);
+          }
+          segments.push(outSegment);
+        }
+
+        return { badges, users, segments };
+      }
+

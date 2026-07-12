@@ -210,10 +210,10 @@
           // Новый компактный формат: лениво читаем данные из chatMeta
           const userInfo = chatMeta?.users?.[msg.uid] || {};
           name  = userInfo.name  || msg.uid;
-          color = userInfo.color || getUserColor(name);
+          color = msg.c || userInfo.color || getUserColor(name);
           msgId = msg.mid;
 
-          (userInfo.badges || []).forEach(key => {
+          (msg.b || userInfo.badges || []).forEach(key => {
             const uuid = chatMeta?.badges?.[key];
             if (uuid) badgesHTML += `<img src="https://static-cdn.jtvnw.net/badges/v1/${uuid}/1" class="badge-icon" alt="badge">`;
           });
