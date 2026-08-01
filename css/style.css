@@ -746,36 +746,37 @@
         right: -4px;
       }
 
-      /* Overlay Transparent Chat Mode (Chat floating ON TOP of video) */
+      /* Overlay Transparent Chat Mode (Chat floating ON TOP of video, background semi-transparent) */
       #app-container.chat-transparent-active #player-container {
         width: 100% !important;
+        height: 100% !important;
         flex: none !important;
       }
 
       #chat-section.chat-transparent {
         position: absolute !important;
-        top: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 100;
-        background-color: rgba(10, 10, 14, 0.45) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        z-index: 100 !important;
+        background-color: rgba(15, 15, 15, 0.2) !important;
+        backdrop-filter: blur(25px) !important;
+        -webkit-backdrop-filter: blur(25px) !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
         border-right: none !important;
-        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3) !important;
       }
 
       #app-container.chat-left #chat-section.chat-transparent {
         right: auto !important;
         left: 0 !important;
         border-left: none !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
+        border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3) !important;
       }
 
       #chat-section.chat-transparent .chat-header {
-        background-color: rgba(18, 18, 22, 0.45) !important;
+        background-color: rgba(24, 24, 27, 0.3) !important;
       }
 
       #chat-section.chat-transparent .message-container {
@@ -1878,7 +1879,7 @@
       /* Phone Landscape Short Heights (max-height: 550px) */
       @media screen and (orientation: landscape) and (max-height: 550px) {
         #chat-section {
-          width: 150px !important;
+          width: 150px;
         }
 
         #chat-section .chat-header {

@@ -224,11 +224,11 @@
       try {
         const savedWidth = localStorage.getItem('chat_width');
         if (savedWidth && !isNaN(parseFloat(savedWidth))) {
-          chatSection.style.width = `${parseFloat(savedWidth)}px`;
+          chatSection.style.setProperty('width', `${parseFloat(savedWidth)}px`, 'important');
         }
         const savedPlayerHeight = localStorage.getItem('player_height_portrait');
         if (savedPlayerHeight && !isNaN(parseFloat(savedPlayerHeight))) {
-          playerContainer.style.maxHeight = `${parseFloat(savedPlayerHeight)}px`;
+          playerContainer.style.setProperty('max-height', `${parseFloat(savedPlayerHeight)}px`, 'important');
         }
       } catch (e) {}
 
@@ -262,19 +262,19 @@
             if (newHeight < minH) newHeight = minH;
             if (newHeight > maxH) newHeight = maxH;
             
-            playerContainer.style.maxHeight = `${newHeight}px`;
+            playerContainer.style.setProperty('max-height', `${newHeight}px`, 'important');
           } else {
-            // Горизонтальный размер (изменение ширины чата)
+            // Горизонтальный размер (изменение ширины чата с принудительным приоритетом !important)
             const isLeft = appContainer.classList.contains('chat-left');
             const deltaX = clientX - startX;
             let newWidth = isLeft ? (startWidth + deltaX) : (startWidth - deltaX);
             
-            const minW = (window.innerHeight <= 550) ? 130 : 180;
-            const maxW = Math.min(650, window.innerWidth * 0.6);
+            const minW = (window.innerHeight <= 550) ? 120 : 180;
+            const maxW = Math.min(650, window.innerWidth * 0.65);
             if (newWidth < minW) newWidth = minW;
             if (newWidth > maxW) newWidth = maxW;
 
-            chatSection.style.width = `${newWidth}px`;
+            chatSection.style.setProperty('width', `${newWidth}px`, 'important');
           }
         }
 
@@ -364,7 +364,15 @@
         });
       }
 
-      hideChatBtn.addEventListener('click', () => {
+      hideChatBtn.addEventListener('click', (e) => {
+        const isPortrait = window.matchMedia('(orientation: portrait)').matches && window.innerWidth <= 1024;
+        if (isPortrait) {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          return; // Запрещено скрывать чат в портретной ориентации
+        }
         appContainer.classList.add('fullscreen-chat-hidden');
         chatSection.classList.add('fullscreen-hidden');
       });
