@@ -409,7 +409,6 @@
         }
 
         playerContainer.addEventListener("mousemove", resetControlsTimeout);
-        playerContainer.addEventListener("touchstart", resetControlsTimeout, { passive: true });
         videoEl.addEventListener("play", resetControlsTimeout);
         videoEl.addEventListener("playing", resetControlsTimeout);
 
@@ -522,15 +521,19 @@
             singleTapTimer = setTimeout(() => {
               if (isLongPress || speedUpActive) return;
 
-              if (isCenterArea) {
-                // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
-                togglePlay();
+              const isControlsHidden = playerContainer.classList.contains("controls-hidden");
+
+              if (isControlsHidden) {
+                // Если элементы были скрыты — ЛЮБОЙ одиночный клик/тап сразу ПОКАЗЫВАЕТ ИХ!
                 resetControlsTimeout();
               } else {
-                // Тап В ЛЮБУЮ СВОБОДНУЮ ОБЛАСТЬ (ВНЕ ЦЕНТРА) — переключаем видимость интерфейса плеера!
-                if (playerContainer.classList.contains("controls-hidden")) {
+                // Если элементы уже видны:
+                if (isCenterArea) {
+                  // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
+                  togglePlay();
                   resetControlsTimeout();
                 } else {
+                  // Тап В СВОБОДНУЮ ВНЕШНЮЮ ЗОНУ — скрываем элементы управления!
                   playerContainer.classList.add("controls-hidden");
                   clearTimeout(controlsTimeout);
                 }
@@ -556,7 +559,7 @@
               }
               startSpeedUp();
             }
-          }, 200);
+          }, 320); // 320мс для надежного откливания тапов без ложного зажатия
         }, { passive: true });
 
         videoEl.addEventListener("touchmove", (e) => {

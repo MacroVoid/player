@@ -280,8 +280,7 @@
         div.innerHTML = replyHTML +
                         `<span class="timestamp">${timeStr}</span>` +
                         (badgesHTML ? `<span class="badges">${badgesHTML}</span>` : '') +
-                        `<span class="username" style="color: ${color}">${escapeHTML(name)}</span>` +
-                        `<span class="colon">:</span>` +
+                        `<span class="user-header" style="white-space: nowrap;"><span class="username" style="color: ${color}">${escapeHTML(name)}</span><span class="colon">:</span></span> ` +
                         `<span class="message-text">${formattedMessage}</span>`;
 
         const replyEl = div.querySelector('.chat-reply');
