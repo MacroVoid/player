@@ -404,7 +404,7 @@
           if (!videoEl.paused) {
             controlsTimeout = setTimeout(() => {
               playerContainer.classList.add("controls-hidden");
-            }, 3500); // Показ элементов на 3.5 сек перед авто-скрытием
+            }, 4000); // 4 секунды до авто-скрытия элементов
           }
         }
 
@@ -466,7 +466,6 @@
         // Обработка двойных тапов (перемотка) и одиночных кликов/тапов
         let lastTapTime = 0;
         let lastTapX = 0;
-        let singleTapTimer = null;
         let touchStartX = 0;
         let touchStartY = 0;
         let touchMoved = false;
@@ -490,14 +489,12 @@
           const centerRadius = Math.max(70, Math.min(rect.width, rect.height) * 0.22);
           const isCenterArea = distFromCenter <= centerRadius;
 
-          const isLeftArea = relativeX < rect.width * 0.42;
-          const isRightArea = relativeX > rect.width * 0.58;
+          const isLeftArea = relativeX < rect.width * 0.35;
+          const isRightArea = relativeX > rect.width * 0.65;
 
+          // 1. Двойной клик / дабл-тап — Перемотка!
           if (now - lastTapTime < 300 && Math.abs(clientX - lastTapX) < 120) {
-            // Двойной клик / дабл-тап — Перемотка!
-            clearTimeout(singleTapTimer);
             lastTapTime = 0;
-
             let prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
             let globalCurrentTime = prevPartsDuration + videoEl.currentTime;
 
@@ -505,41 +502,37 @@
               seekToGlobalTime(Math.max(0, globalCurrentTime - 10));
               showActionFeedback(SVG_REW, "-10с");
               resetControlsTimeout();
+              return;
             } else if (isRightArea) {
               const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
               seekToGlobalTime(Math.min(duration, globalCurrentTime + 10));
               showActionFeedback(SVG_FF, "+10с");
               resetControlsTimeout();
-            } else {
+              return;
+            }
+          }
+
+          lastTapTime = now;
+          lastTapX = clientX;
+
+          if (isLongPress || speedUpActive) return;
+
+          const isControlsHidden = playerContainer.classList.contains("controls-hidden");
+
+          if (isControlsHidden) {
+            // МГНОВЕННО Показываем элементы управления при тапе по скрытому плееру!
+            resetControlsTimeout();
+          } else {
+            // Если элементы управления УЖЕ ВИДНЫ:
+            if (isCenterArea) {
+              // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
               togglePlay();
               resetControlsTimeout();
+            } else {
+              // Тап В СВОБОДНУЮ ВНЕШНЮЮ ЗОНУ — скрываем элементы управления!
+              playerContainer.classList.add("controls-hidden");
+              clearTimeout(controlsTimeout);
             }
-          } else {
-            // Одиночный клик / тап
-            lastTapTime = now;
-            lastTapX = clientX;
-
-            singleTapTimer = setTimeout(() => {
-              if (isLongPress || speedUpActive) return;
-
-              const isControlsHidden = playerContainer.classList.contains("controls-hidden");
-
-              if (isControlsHidden) {
-                // Если элементы были скрыты — ЛЮБОЙ одиночный клик/тап сразу ПОКАЗЫВАЕТ ИХ!
-                resetControlsTimeout();
-              } else {
-                // Если элементы уже видны:
-                if (isCenterArea) {
-                  // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
-                  togglePlay();
-                  resetControlsTimeout();
-                } else {
-                  // Тап В СВОБОДНУЮ ВНЕШНЮЮ ЗОНУ — скрываем элементы управления!
-                  playerContainer.classList.add("controls-hidden");
-                  clearTimeout(controlsTimeout);
-                }
-              }
-            }, 250);
           }
         }
 
@@ -597,11 +590,9 @@
         videoEl.addEventListener("mousedown", (e) => {
           if (e.button !== 0) return;
 
-          // Если с момента получения окном фокуса прошло меньше 200мс,
-          // значит это был клик для активации окна
           if (Date.now() - lastFocusTime < 200) {
             ignoreClickAfterFocus = true;
-            return; // Игнорируем запуск ускорения
+            return;
           }
 
           ignoreClickAfterFocus = false;
@@ -615,11 +606,10 @@
           if (e.button !== 0) return;
 
           // Блокируем симулированный mouseup от сенсорного тапа
-          if (Date.now() - lastTouchEndTime < 450) {
+          if (Date.now() - lastTouchEndTime < 500) {
             return;
           }
 
-          // Если этот клик был для активации окна, ничего не делаем
           if (ignoreClickAfterFocus) {
             ignoreClickAfterFocus = false;
             return;
@@ -628,7 +618,7 @@
           clearTimeout(pressTimer);
           if (speedUpActive) {
             stopSpeedUp();
-          } else if (!isLongPress && e.target === videoEl) {
+          } else if (!isLongPress && (e.target === videoEl || e.target === playerContainer)) {
             handleTapOrClick(e.clientX, e.clientY);
           }
         });
