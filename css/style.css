@@ -715,6 +715,7 @@
 
       #chat-section {
         width: 400px;
+        min-width: 260px;
         flex-shrink: 0;
         background-color: var(--chat-bg);
         border-left: 1px solid var(--border-color);

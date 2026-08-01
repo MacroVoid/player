@@ -291,7 +291,7 @@
             const deltaX = clientX - startX;
             let newWidth = isLeft ? (startWidth + deltaX) : (startWidth - deltaX);
             
-            const minW = (window.innerHeight <= 550) ? 120 : 180;
+            const minW = (window.innerHeight <= 550) ? 180 : 260;
             const maxW = Math.min(650, window.innerWidth * 0.65);
             if (newWidth < minW) newWidth = minW;
             if (newWidth > maxW) newWidth = maxW;
