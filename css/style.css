@@ -1068,7 +1068,8 @@
       #chat-messages {
         flex: 1;
         overflow-y: auto;
-        padding: 12px 0;
+        padding: 12px 0 32px 0;
+        padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
       }
 
       #chat-messages::-webkit-scrollbar {
@@ -1772,6 +1773,8 @@
           -webkit-overflow-scrolling: touch !important;
           touch-action: pan-y !important;
           overscroll-behavior: contain !important;
+          padding-top: 8px !important;
+          padding-bottom: max(48px, env(safe-area-inset-bottom, 48px)) !important;
         }
 
         /* Убираем возможность менять положение чата, прозрачность и скрывать чат в портретном режиме */
