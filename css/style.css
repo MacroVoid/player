@@ -1603,10 +1603,11 @@
       }
 
       /* ==========================================================================
-         Responsive Adaptations (Mobile & Tablet)
+         Responsive Adaptations (Mobile & Tablet - Portrait & Landscape)
          ========================================================================== */
 
-      @media screen and (max-width: 768px), (max-device-width: 900px) and (orientation: portrait) {
+      /* Portrait Orientation (Smartphones & Tablets in Portrait) */
+      @media screen and (orientation: portrait) and (max-width: 1024px), screen and (max-width: 768px) and (orientation: portrait) {
         #app-container {
           flex-direction: column !important;
           overflow-y: auto;
@@ -1620,7 +1621,7 @@
           width: 100% !important;
           height: auto !important;
           aspect-ratio: 16 / 9;
-          max-height: 45vh;
+          max-height: 42vh;
           flex-shrink: 0;
         }
 
@@ -1661,10 +1662,10 @@
         }
 
         .controls-overlay {
-          bottom: 12px;
-          left: 12px;
-          right: 12px;
-          gap: 8px;
+          bottom: 10px;
+          left: 10px;
+          right: 10px;
+          gap: 6px;
         }
 
         .left-controls, .right-controls {
@@ -1700,6 +1701,61 @@
         }
       }
 
+      /* Landscape Orientation (Smartphones & Tablets in Landscape) */
+      @media screen and (orientation: landscape) and (max-height: 850px) {
+        #app-container {
+          flex-direction: row;
+        }
+
+        #app-container.chat-left {
+          flex-direction: row-reverse;
+        }
+
+        #player-container {
+          flex: 1;
+          height: 100vh;
+        }
+
+        #chat-section {
+          width: 280px;
+          height: 100vh;
+        }
+
+        .controls-overlay {
+          bottom: 10px;
+          left: 10px;
+          right: 10px;
+        }
+
+        .control-btn,
+        .volume-container,
+        .time-display,
+        .speed-control-container {
+          height: 34px;
+        }
+
+        .control-btn {
+          width: 34px;
+        }
+      }
+
+      /* Phone Landscape Short Heights (max-height: 500px) */
+      @media screen and (orientation: landscape) and (max-height: 500px) {
+        #chat-section {
+          width: 240px;
+        }
+        
+        .time-display {
+          font-size: 0.7rem;
+          padding: 0 6px;
+        }
+        
+        .volume-bar {
+          width: 40px;
+        }
+      }
+
+      /* Extra Small Mobile Screens (< 480px) */
       @media screen and (max-width: 480px) {
         .volume-bar {
           width: 45px;
@@ -1722,9 +1778,10 @@
         }
       }
 
-      @media screen and (min-width: 769px) and (max-width: 1024px) {
+      /* Tablets / Medium Screens Landscape (769px to 1024px) */
+      @media screen and (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
         #chat-section {
-          width: 300px;
+          width: 310px;
         }
       }.chat-reply {
   font-size: 13px;

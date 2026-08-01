@@ -272,6 +272,48 @@
           updatePreview(time, percentage);
         });
 
+        function handleSeekBarTouch(e) {
+          if (!e.touches || e.touches.length === 0) return;
+          const touch = e.touches[0];
+          const rect = seekBar.getBoundingClientRect();
+          let offsetX = touch.clientX - rect.left;
+          if (offsetX < 0) offsetX = 0;
+          if (offsetX > rect.width) offsetX = rect.width;
+
+          const thumbWidth = 12;
+          const halfThumb = thumbWidth / 2;
+          let percentage = 0;
+          if (rect.width > thumbWidth) {
+            percentage = (offsetX - halfThumb) / (rect.width - thumbWidth);
+          } else {
+            percentage = offsetX / rect.width;
+          }
+          if (percentage < 0) percentage = 0;
+          if (percentage > 1) percentage = 1;
+
+          const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+          const val = percentage * duration;
+          seekBar.value = val;
+          seekToGlobalTime(val);
+          timeDisplay.textContent = `${formatTime(val)} / ${formatTime(duration)}`;
+          updateSeekBarBackground(val);
+        }
+
+        seekBar.addEventListener("touchstart", (e) => {
+          isScrubbing = true;
+          handleSeekBarTouch(e);
+        }, { passive: true });
+
+        seekBar.addEventListener("touchmove", (e) => {
+          if (isScrubbing) {
+            handleSeekBarTouch(e);
+          }
+        }, { passive: true });
+
+        seekBar.addEventListener("touchend", () => {
+          isScrubbing = false;
+        });
+
         volumeBar.addEventListener("input", () => {
           setPlayerVolume(volumeBar.value);
           videoEl.muted = volumeBar.value == 0;
@@ -393,6 +435,103 @@
           lastFocusTime = Date.now();
         });
 
+        // Обработка двойных тапов (перемотка) и одиночных кликов/тапов
+        let lastTapTime = 0;
+        let lastTapX = 0;
+        let singleTapTimer = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchMoved = false;
+
+        function handleTapOrClick(clientX, clientY) {
+          const now = Date.now();
+          const rect = playerContainer.getBoundingClientRect();
+          const relativeX = clientX - rect.left;
+          const isLeftArea = relativeX < rect.width * 0.42;
+          const isRightArea = relativeX > rect.width * 0.58;
+
+          if (now - lastTapTime < 300 && Math.abs(clientX - lastTapX) < 120) {
+            // Двойной клик / дабл-тап!
+            clearTimeout(singleTapTimer);
+            lastTapTime = 0;
+
+            let prevPartsDuration = videoDurations.slice(0, currentVideoIndex).reduce((a, b) => a + b, 0);
+            let globalCurrentTime = prevPartsDuration + videoEl.currentTime;
+
+            if (isLeftArea) {
+              seekToGlobalTime(Math.max(0, globalCurrentTime - 10));
+              showActionFeedback(SVG_REW, "-10с");
+              resetControlsTimeout();
+            } else if (isRightArea) {
+              const duration = totalDuration > 0 ? totalDuration : videoEl.duration;
+              seekToGlobalTime(Math.min(duration, globalCurrentTime + 10));
+              showActionFeedback(SVG_FF, "+10с");
+              resetControlsTimeout();
+            } else {
+              togglePlay();
+            }
+          } else {
+            // Одиночный клик / тап
+            lastTapTime = now;
+            lastTapX = clientX;
+
+            singleTapTimer = setTimeout(() => {
+              if (!isLongPress && !speedUpActive) {
+                togglePlay();
+              }
+            }, 250);
+          }
+        }
+
+        // Поддержка Touch-жестов для мобильных и планшетов (зажатие 2.0x + дабл-тапы)
+        videoEl.addEventListener("touchstart", (e) => {
+          if (e.touches.length !== 1) return;
+          const touch = e.touches[0];
+          touchStartX = touch.clientX;
+          touchStartY = touch.clientY;
+          touchMoved = false;
+
+          isLongPress = false;
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(() => {
+            if (!touchMoved) {
+              if (navigator.vibrate) {
+                try { navigator.vibrate(40); } catch(err){}
+              }
+              startSpeedUp();
+            }
+          }, 250);
+        }, { passive: true });
+
+        videoEl.addEventListener("touchmove", (e) => {
+          if (e.touches.length !== 1) return;
+          const touch = e.touches[0];
+          if (Math.abs(touch.clientX - touchStartX) > 12 || Math.abs(touch.clientY - touchStartY) > 12) {
+            touchMoved = true;
+            clearTimeout(pressTimer);
+          }
+        }, { passive: true });
+
+        videoEl.addEventListener("touchend", (e) => {
+          clearTimeout(pressTimer);
+          if (speedUpActive) {
+            stopSpeedUp();
+            return;
+          }
+
+          if (!touchMoved && e.changedTouches && e.changedTouches.length > 0) {
+            const touch = e.changedTouches[0];
+            handleTapOrClick(touch.clientX, touch.clientY);
+          }
+        });
+
+        videoEl.addEventListener("touchcancel", () => {
+          clearTimeout(pressTimer);
+          if (speedUpActive) {
+            stopSpeedUp();
+          }
+        });
+
         videoEl.addEventListener("mousedown", (e) => {
           if (e.button !== 0) return;
 
@@ -423,7 +562,9 @@
           if (speedUpActive) {
             stopSpeedUp();
           } else if (!isLongPress && e.target === videoEl) {
-            togglePlay();
+            if (!('ontouchstart' in window) || e.pointerType === 'mouse') {
+              handleTapOrClick(e.clientX, e.clientY);
+            }
           }
         });
         playerContainer.addEventListener("mouseleave", () => {
