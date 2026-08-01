@@ -457,6 +457,7 @@
         let lastFocusTime = 0;
         let ignoreClickAfterFocus = false;
         let lastTouchEndTime = 0;
+        let isTouchInteraction = false;
 
         // Отлавливаем момент, когда окно становится активным
         window.addEventListener("focus", () => {
@@ -579,6 +580,9 @@
         videoEl.addEventListener("touchend", (e) => {
           clearTimeout(pressTimer);
           lastTouchEndTime = Date.now();
+          isTouchInteraction = true;
+          // Сбрасываем флаг через 800ms — достаточно, чтобы перекрыть синтетические mouse-события браузера
+          setTimeout(() => { isTouchInteraction = false; }, 800);
 
           if (speedUpActive) {
             stopSpeedUp();
@@ -602,7 +606,7 @@
           if (e.button !== 0) return;
 
           // Блокируем симулированный mousedown от сенсорного тапа
-          if (Date.now() - lastTouchEndTime < 500) {
+          if (isTouchInteraction || Date.now() - lastTouchEndTime < 800) {
             return;
           }
 
@@ -622,7 +626,7 @@
           if (e.button !== 0) return;
 
           // Блокируем симулированный mouseup от сенсорного тапа
-          if (Date.now() - lastTouchEndTime < 500) {
+          if (isTouchInteraction || Date.now() - lastTouchEndTime < 800) {
             return;
           }
 
