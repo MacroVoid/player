@@ -161,6 +161,9 @@
         justify-content: center;
         align-items: center;
         overflow: hidden;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
       }
 
       video {
@@ -169,6 +172,9 @@
         max-height: 100vh;
         object-fit: contain;
         cursor: pointer;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
       }
 
       /* Полное скрытие курсора на плеере и видео когда элементы неактивны */
@@ -1662,10 +1668,16 @@
         }
 
         .controls-overlay {
-          bottom: 10px;
+          bottom: max(12px, env(safe-area-inset-bottom, 12px));
+          padding-bottom: env(safe-area-inset-bottom, 0px);
           left: 10px;
           right: 10px;
           gap: 6px;
+        }
+
+        #app-container.fullscreen-chat-hidden .controls-overlay,
+        #app-container.chat-hidden .controls-overlay {
+          bottom: max(28px, env(safe-area-inset-bottom, 28px));
         }
 
         .left-controls, .right-controls {
@@ -1717,14 +1729,15 @@
         }
 
         #chat-section {
-          width: 280px;
+          width: 210px;
           height: 100vh;
         }
 
         .controls-overlay {
-          bottom: 10px;
-          left: 10px;
-          right: 10px;
+          bottom: max(10px, env(safe-area-inset-bottom, 10px));
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          left: max(10px, env(safe-area-inset-left, 10px));
+          right: max(10px, env(safe-area-inset-right, 10px));
         }
 
         .control-btn,
@@ -1742,7 +1755,7 @@
       /* Phone Landscape Short Heights (max-height: 500px) */
       @media screen and (orientation: landscape) and (max-height: 500px) {
         #chat-section {
-          width: 240px;
+          width: 190px;
         }
         
         .time-display {
@@ -1781,7 +1794,7 @@
       /* Tablets / Medium Screens Landscape (769px to 1024px) */
       @media screen and (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
         #chat-section {
-          width: 310px;
+          width: 250px;
         }
       }.chat-reply {
   font-size: 13px;

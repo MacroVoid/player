@@ -372,11 +372,28 @@
 
         fullscreenBtn.addEventListener("click", () => {
           if (!document.fullscreenElement) {
-            appContainer.requestFullscreen().catch(err => {
+            appContainer.requestFullscreen().then(() => {
+              if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock("landscape").catch(err => {
+                  console.warn("Screen orientation lock warning:", err);
+                });
+              }
+            }).catch(err => {
               console.error("Error enabling fullscreen mode:", err);
             });
           } else {
             document.exitFullscreen();
+          }
+        });
+
+        document.addEventListener("fullscreenchange", () => {
+          if (!document.fullscreenElement) {
+            appContainer.classList.remove('fullscreen-chat-hidden');
+            const chatSec = document.getElementById('chat-section');
+            if (chatSec) chatSec.classList.remove('fullscreen-hidden');
+            if (screen.orientation && screen.orientation.unlock) {
+              try { screen.orientation.unlock(); } catch(e){}
+            }
           }
         });
 
@@ -392,6 +409,14 @@
         }
 
         playerContainer.addEventListener("mousemove", resetControlsTimeout);
+
+        // Блокируем контекстное меню браузера при зажатии пальца на мобильных устройств или ПКМ
+        videoEl.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+        });
+        playerContainer.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+        });
 
         // УЛУЧШЕННОЕ УСКОРЕНИЕ (В ТОМ ЧИСЛЕ С ПАУЗЫ)
         function startSpeedUp() {
@@ -451,7 +476,7 @@
           const isRightArea = relativeX > rect.width * 0.58;
 
           if (now - lastTapTime < 300 && Math.abs(clientX - lastTapX) < 120) {
-            // Двойной клик / дабл-тап!
+            // Двойной клик / дабл-тап — Перемотка!
             clearTimeout(singleTapTimer);
             lastTapTime = 0;
 
@@ -476,7 +501,14 @@
             lastTapX = clientX;
 
             singleTapTimer = setTimeout(() => {
-              if (!isLongPress && !speedUpActive) {
+              if (isLongPress || speedUpActive) return;
+
+              const isControlsHidden = playerContainer.classList.contains("controls-hidden");
+              if (isControlsHidden) {
+                // Если элементы управления были скрыты — сначала просто показываем их!
+                resetControlsTimeout();
+              } else {
+                // Если элементы уже видны — переключаем Воспроизведение / Пауза
                 togglePlay();
               }
             }, 250);
@@ -500,13 +532,13 @@
               }
               startSpeedUp();
             }
-          }, 250);
+          }, 200);
         }, { passive: true });
 
         videoEl.addEventListener("touchmove", (e) => {
           if (e.touches.length !== 1) return;
           const touch = e.touches[0];
-          if (Math.abs(touch.clientX - touchStartX) > 12 || Math.abs(touch.clientY - touchStartY) > 12) {
+          if (Math.abs(touch.clientX - touchStartX) > 10 || Math.abs(touch.clientY - touchStartY) > 10) {
             touchMoved = true;
             clearTimeout(pressTimer);
           }
