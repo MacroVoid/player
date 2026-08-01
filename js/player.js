@@ -408,7 +408,10 @@
           }
         }
 
-        playerContainer.addEventListener("mousemove", resetControlsTimeout);
+        playerContainer.addEventListener("mousemove", () => {
+          if (isTouchInteraction) return;
+          resetControlsTimeout();
+        });
         videoEl.addEventListener("play", resetControlsTimeout);
         videoEl.addEventListener("playing", resetControlsTimeout);
 
