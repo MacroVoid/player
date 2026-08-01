@@ -50,41 +50,40 @@
           visibility 0.5s ease;
       }
 
-      .commit-badge {
+      .version-badge {
         position: absolute;
         top: 24px;
-        right: 28px;
-        background: rgba(24, 24, 27, 0.55);
+        right: 24px;
+        background: rgba(24, 24, 27, 0.45);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--border-color);
-        padding: 6px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 20px;
+        padding: 6px 14px;
         font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--text-muted);
+        font-weight: 600;
+        color: var(--text-color);
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         display: flex;
         align-items: center;
         gap: 6px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        letter-spacing: 0.5px;
-        font-family: monospace;
-        text-decoration: none;
+        user-select: none;
+        z-index: 1010;
         transition: all 0.2s ease;
-        z-index: 1001;
       }
 
-      .commit-badge:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text-color);
+      .version-badge:hover {
         border-color: rgba(255, 255, 255, 0.25);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        background: rgba(24, 24, 27, 0.65);
       }
 
-      .commit-badge svg {
-        opacity: 0.75;
-        fill: currentColor;
+      .version-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: var(--accent-color);
+        box-shadow: 0 0 6px var(--accent-color);
       }
 
       .upload-card {
@@ -1903,6 +1902,13 @@
 
       /* Extra Small Mobile Screens (< 480px) */
       @media screen and (max-width: 480px) {
+        .version-badge {
+          top: 12px;
+          right: 12px;
+          padding: 4px 10px;
+          font-size: 0.72rem;
+        }
+
         .volume-bar {
           width: 45px;
         }
