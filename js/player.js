@@ -470,7 +470,7 @@
         let touchStartY = 0;
         let touchMoved = false;
 
-        function handleTapOrClick(clientX, clientY) {
+        function handleTapOrClick(clientX, clientY, isTouch = false) {
           const now = Date.now();
           const rect = playerContainer.getBoundingClientRect();
           const relativeX = clientX - rect.left;
@@ -519,18 +519,29 @@
 
           const isControlsHidden = playerContainer.classList.contains("controls-hidden");
 
-          if (isControlsHidden) {
-            // МГНОВЕННО Показываем элементы управления при тапе по скрытому плееру!
-            resetControlsTimeout();
-          } else {
-            // Если элементы управления УЖЕ ВИДНЫ:
-            if (isCenterArea) {
-              // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
-              togglePlay();
+          if (isTouch) {
+            if (isControlsHidden) {
+              // МГНОВЕННО Показываем элементы управления при тапе по скрытому плееру!
               resetControlsTimeout();
             } else {
-              // Тап В СВОБОДНУЮ ВНЕШНЮЮ ЗОНУ — скрываем элементы управления!
-              playerContainer.classList.add("controls-hidden");
+              // Если элементы управления УЖЕ ВИДНЫ:
+              if (isCenterArea) {
+                // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
+                togglePlay();
+                resetControlsTimeout();
+              } else {
+                // Тап В СВОБОДНУЮ ВНЕШНЮЮ ЗОНУ — скрываем элементы управления!
+                playerContainer.classList.add("controls-hidden");
+                clearTimeout(controlsTimeout);
+              }
+            }
+          } else {
+            // На ПК (не touch): любой клик на свободную область останавливает/запускает видео
+            togglePlay();
+            if (!videoEl.paused) {
+              resetControlsTimeout();
+            } else {
+              playerContainer.classList.remove("controls-hidden");
               clearTimeout(controlsTimeout);
             }
           }
@@ -576,7 +587,7 @@
 
           if (!touchMoved && e.changedTouches && e.changedTouches.length > 0) {
             const touch = e.changedTouches[0];
-            handleTapOrClick(touch.clientX, touch.clientY);
+            handleTapOrClick(touch.clientX, touch.clientY, true);
           }
         });
 
@@ -589,6 +600,11 @@
 
         videoEl.addEventListener("mousedown", (e) => {
           if (e.button !== 0) return;
+
+          // Блокируем симулированный mousedown от сенсорного тапа
+          if (Date.now() - lastTouchEndTime < 500) {
+            return;
+          }
 
           if (Date.now() - lastFocusTime < 200) {
             ignoreClickAfterFocus = true;
@@ -619,7 +635,7 @@
           if (speedUpActive) {
             stopSpeedUp();
           } else if (!isLongPress && (e.target === videoEl || e.target === playerContainer)) {
-            handleTapOrClick(e.clientX, e.clientY);
+            handleTapOrClick(e.clientX, e.clientY, false);
           }
         });
         playerContainer.addEventListener("mouseleave", () => {
