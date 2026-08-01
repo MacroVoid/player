@@ -404,11 +404,14 @@
           if (!videoEl.paused) {
             controlsTimeout = setTimeout(() => {
               playerContainer.classList.add("controls-hidden");
-            }, 1200); // Быстрое скрытие нижней панели (1.2 сек)
+            }, 2500); // Авто-скрытие элементов управления через 2.5 сек
           }
         }
 
         playerContainer.addEventListener("mousemove", resetControlsTimeout);
+        playerContainer.addEventListener("touchstart", resetControlsTimeout, { passive: true });
+        videoEl.addEventListener("play", resetControlsTimeout);
+        videoEl.addEventListener("playing", resetControlsTimeout);
 
         // Блокируем контекстное меню браузера при зажатии пальца на мобильных устройств или ПКМ
         videoEl.addEventListener("contextmenu", (e) => {
@@ -472,6 +475,21 @@
           const now = Date.now();
           const rect = playerContainer.getBoundingClientRect();
           const relativeX = clientX - rect.left;
+          const relativeY = clientY - rect.top;
+
+          // Координаты центра плеера
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+
+          // Расстояние от точки нажатия до центра плеера
+          const dx = relativeX - centerX;
+          const dy = relativeY - centerY;
+          const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+
+          // Радиус центральной зоны (где находится круг паузы/воспроизведения)
+          const centerRadius = Math.max(70, Math.min(rect.width, rect.height) * 0.22);
+          const isCenterArea = distFromCenter <= centerRadius;
+
           const isLeftArea = relativeX < rect.width * 0.42;
           const isRightArea = relativeX > rect.width * 0.58;
 
@@ -494,6 +512,7 @@
               resetControlsTimeout();
             } else {
               togglePlay();
+              resetControlsTimeout();
             }
           } else {
             // Одиночный клик / тап
@@ -503,13 +522,18 @@
             singleTapTimer = setTimeout(() => {
               if (isLongPress || speedUpActive) return;
 
-              const isControlsHidden = playerContainer.classList.contains("controls-hidden");
-              if (isControlsHidden) {
-                // Если элементы управления были скрыты — сначала просто показываем их!
+              if (isCenterArea) {
+                // Тап В ЦЕНТРАЛЬНУЮ ЗОНУ — переключаем Воспроизведение / Паузу!
+                togglePlay();
                 resetControlsTimeout();
               } else {
-                // Если элементы уже видны — переключаем Воспроизведение / Пауза
-                togglePlay();
+                // Тап В ЛЮБУЮ СВОБОДНУЮ ОБЛАСТЬ (ВНЕ ЦЕНТРА) — переключаем видимость интерфейса плеера!
+                if (playerContainer.classList.contains("controls-hidden")) {
+                  resetControlsTimeout();
+                } else {
+                  playerContainer.classList.add("controls-hidden");
+                  clearTimeout(controlsTimeout);
+                }
               }
             }, 250);
           }
