@@ -9,11 +9,17 @@
         --accent-hover: #a970ff;
       }
 
+      html, body {
+        touch-action: manipulation;
+        -webkit-text-size-adjust: 100%;
+      }
+
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
         user-select: none;
+        touch-action: manipulation;
       }
 
       body {

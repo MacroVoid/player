@@ -373,3 +373,21 @@
         }
         return list.sort((a, b) => a._timeSec - b._timeSec);
       }
+
+      // Block mobile pinch-to-zoom and gesture zoom on Safari / Mobile browsers
+      document.addEventListener('gesturestart', (e) => {
+        e.preventDefault();
+      });
+      document.addEventListener('gesturechange', (e) => {
+        e.preventDefault();
+      });
+      document.addEventListener('gestureend', (e) => {
+        e.preventDefault();
+      });
+
+      // Prevent multi-touch zoom
+      document.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
