@@ -221,16 +221,35 @@
       }
 
       // Chat Resizing Logic (Drag & Touch for Desktop, Mobile Landscape & Portrait)
+      function applyOrientationAdjustments() {
+        const isPortrait = window.matchMedia('(orientation: portrait)').matches && window.innerWidth <= 1024;
+        if (isPortrait) {
+          // В портретном режиме ширина чата ВСЕГДА 100%, сбрасываем фиксированную ширину
+          chatSection.style.width = '';
+          const savedPlayerHeight = localStorage.getItem('player_height_portrait');
+          if (savedPlayerHeight && !isNaN(parseFloat(savedPlayerHeight))) {
+            playerContainer.style.setProperty('max-height', `${parseFloat(savedPlayerHeight)}px`, 'important');
+          } else {
+            playerContainer.style.maxHeight = '';
+          }
+        } else {
+          // В альбомном режиме и на ПК сбрасываем ограничение высоты плеера
+          playerContainer.style.maxHeight = '';
+          const savedWidth = localStorage.getItem('chat_width');
+          if (savedWidth && !isNaN(parseFloat(savedWidth))) {
+            chatSection.style.setProperty('width', `${parseFloat(savedWidth)}px`, 'important');
+          } else {
+            chatSection.style.width = '';
+          }
+        }
+      }
+
       try {
-        const savedWidth = localStorage.getItem('chat_width');
-        if (savedWidth && !isNaN(parseFloat(savedWidth))) {
-          chatSection.style.setProperty('width', `${parseFloat(savedWidth)}px`, 'important');
-        }
-        const savedPlayerHeight = localStorage.getItem('player_height_portrait');
-        if (savedPlayerHeight && !isNaN(parseFloat(savedPlayerHeight))) {
-          playerContainer.style.setProperty('max-height', `${parseFloat(savedPlayerHeight)}px`, 'important');
-        }
+        applyOrientationAdjustments();
       } catch (e) {}
+
+      window.addEventListener('resize', applyOrientationAdjustments);
+      window.addEventListener('orientationchange', applyOrientationAdjustments);
 
       if (typeof chatResizer !== 'undefined' && chatResizer) {
         let isResizing = false;
@@ -374,17 +393,23 @@
           return; // Запрещено скрывать чат в портретной ориентации
         }
         appContainer.classList.add('fullscreen-chat-hidden');
+        appContainer.classList.add('chat-hidden');
         chatSection.classList.add('fullscreen-hidden');
+        chatSection.classList.add('chat-hidden');
       });
 
       showChatBtn.addEventListener('click', () => {
         appContainer.classList.remove('fullscreen-chat-hidden');
+        appContainer.classList.remove('chat-hidden');
         chatSection.classList.remove('fullscreen-hidden');
+        chatSection.classList.remove('chat-hidden');
       });
 
       document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
           appContainer.classList.remove('fullscreen-chat-hidden');
+          appContainer.classList.remove('chat-hidden');
           chatSection.classList.remove('fullscreen-hidden');
+          chatSection.classList.remove('chat-hidden');
         }
       });

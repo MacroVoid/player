@@ -1619,31 +1619,44 @@
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 105;
-        background: rgba(24, 24, 27, 0.7);
+        z-index: 150;
+        background: rgba(24, 24, 27, 0.85);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 12px;
         color: var(--text-color);
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         display: none;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         transition: all 0.2s ease;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      }
+
+      #app-container.chat-left .show-chat-btn {
+        right: auto;
+        left: 20px;
+      }
+
+      /* Показываем кнопку возврата чата ВСЕГДА, когда чат скрыт (ПК, мобильный ландшафт, полноэкранный режим) */
+      #app-container.fullscreen-chat-hidden .show-chat-btn,
+      #app-container.chat-hidden .show-chat-btn,
+      #chat-section.fullscreen-hidden ~ .show-chat-btn,
+      #chat-section.chat-hidden ~ .show-chat-btn {
+        display: flex !important;
       }
 
       .show-chat-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
         transform: scale(1.05);
       }
 
       .show-chat-btn svg {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         fill: currentColor;
       }
 
@@ -1696,13 +1709,9 @@
       }
 
       #app-container:fullscreen #chat-section.fullscreen-hidden,
-      #app-container.fullscreen-chat-hidden #chat-section {
+      #app-container.fullscreen-chat-hidden #chat-section,
+      #app-container.chat-hidden #chat-section {
         display: none !important;
-      }
-
-      /* Show button in fullscreen when chat is hidden */
-      #app-container.fullscreen-chat-hidden:fullscreen .show-chat-btn {
-        display: flex;
       }
 
       /* Font size is smaller in fullscreen chat */
@@ -1738,13 +1747,12 @@
           width: 100% !important;
           height: auto !important;
           aspect-ratio: 16 / 9;
-          max-height: 42vh;
           flex-shrink: 0;
         }
 
         #chat-section {
           width: 100% !important;
-          flex: 1;
+          flex: 1 !important;
           min-height: 200px;
           border-left: none !important;
           border-right: none !important;
@@ -1757,12 +1765,22 @@
         }
 
         /* Запрещаем скрывать чат в портретной ориентации на мобильных устройствах */
-        #hide-chat-btn {
+        #hide-chat-btn,
+        .hide-chat-btn {
           display: none !important;
+          pointer-events: none !important;
+          visibility: hidden !important;
         }
 
-        #app-container:not(:fullscreen) #chat-section {
+        #chat-section,
+        #chat-section.fullscreen-hidden,
+        #chat-section.chat-hidden,
+        #app-container.fullscreen-chat-hidden #chat-section,
+        #app-container.chat-hidden #chat-section {
           display: flex !important;
+          visibility: visible !important;
+          transform: none !important;
+          opacity: 1 !important;
         }
 
         .chat-resizer {
