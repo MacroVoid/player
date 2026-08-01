@@ -1,253 +1,252 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>VOD Player & Chat Simulation</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>VOD Player & Chat Simulation</title>
 
-        <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div id="upload-screen">
-      <div class="version-badge">
-        <span class="version-dot"></span> v2.5.0
-      </div>
-      <div class="upload-card">
-        <h2>VOD Player</h2>
-        <div class="file-group">
-          <label>Видеофайл (можно выбрать несколько частей)</label>
-          <input type="file" id="video-input" accept="video/*" multiple />
-        </div>
-        <div class="file-group">
-          <label>Файлы чата JSON (необязательно, можно несколько)</label>
-          <input type="file" id="chat-input" accept=".json" multiple />
-        </div>
-        <button class="btn-start" id="start-btn" disabled>Запустить</button>
-        <div id="loading-indicator" style="display: none; margin-top: 10px; color: var(--accent-color); font-weight: bold; text-align: center;">Подготовка видео...</div>
-        <button class="btn-demo" id="demo-btn">
-          Демо режим (Быстрый просмотр)
-        </button>
-        
-        <!-- Restore Session Container -->
-        <div id="restore-container" style="display: none; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center;">
-          <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 0.9rem;">
-            Обнаружена предыдущая сессия:
-          </p>
-          <div style="font-size: 0.85rem; margin-bottom: 16px; text-align: left; background: rgba(0, 0, 0, 0.25); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
-            <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">📹 Видео: <span id="restore-video-name" style="color: var(--text-color); font-weight: 600;">-</span></div>
-            <div style="margin-top: 6px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">💬 Чат: <span id="restore-chat-name" style="color: var(--text-color); font-weight: 600;">-</span></div>
-          </div>
-          <button class="btn-primary" id="restore-btn" style="width: 100%; padding: 10px; font-size: 0.9rem;">Восстановить сессию</button>
-        </div>
-      </div>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div id="upload-screen">
+    <div class="version-badge">
+      <span class="version-dot"></span> v2.6.0
     </div>
-
-    <div id="app-container">
-      <button id="show-chat-btn" class="show-chat-btn" title="Показать чат">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M21 19H19V5H21V19ZM1.586 12 8.293 5.293 9.707 6.707 5.414 11H17v2H5.414l4.293 4.293-1.414 1.414L1.586 12Z"></path>
-        </svg>
+    <div class="upload-card">
+      <h2>VOD Player</h2>
+      <div class="file-group">
+        <label>Видеофайл (можно выбрать несколько частей)</label>
+        <input type="file" id="video-input" accept="video/*" multiple />
+      </div>
+      <div class="file-group">
+        <label>Файлы чата JSON (необязательно, можно несколько)</label>
+        <input type="file" id="chat-input" accept=".json" multiple />
+      </div>
+      <button class="btn-start" id="start-btn" disabled>Запустить</button>
+      <div id="loading-indicator"
+        style="display: none; margin-top: 10px; color: var(--accent-color); font-weight: bold; text-align: center;">
+        Подготовка видео...</div>
+      <button class="btn-demo" id="demo-btn">
+        Демо режим (Быстрый просмотр)
       </button>
-      <div id="player-container">
-        <video id="main-video" playsinline></video>
 
-        <div class="speed-overlay" id="speed-overlay">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
-          </svg>
-          Скорость 2x
+      <!-- Restore Session Container -->
+      <div id="restore-container"
+        style="display: none; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center;">
+        <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 0.9rem;">
+          Обнаружена предыдущая сессия:
+        </p>
+        <div
+          style="font-size: 0.85rem; margin-bottom: 16px; text-align: left; background: rgba(0, 0, 0, 0.25); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+          <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">📹 Видео: <span
+              id="restore-video-name" style="color: var(--text-color); font-weight: 600;">-</span></div>
+          <div style="margin-top: 6px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">💬 Чат: <span
+              id="restore-chat-name" style="color: var(--text-color); font-weight: 600;">-</span></div>
         </div>
+        <button class="btn-primary" id="restore-btn" style="width: 100%; padding: 10px; font-size: 0.9rem;">Восстановить
+          сессию</button>
+      </div>
+    </div>
+  </div>
 
-        <!-- Центральный попап для отображения действий (громкость, пауза, перемотка) -->
-        <div id="action-overlay-center" class="action-overlay-center">
-          <div id="action-icon-center"></div>
-          <div id="action-text-center" class="action-text"></div>
-        </div>
+  <div id="app-container">
+    <button id="show-chat-btn" class="show-chat-btn" title="Показать чат">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path
+          d="M21 19H19V5H21V19ZM1.586 12 8.293 5.293 9.707 6.707 5.414 11H17v2H5.414l4.293 4.293-1.414 1.414L1.586 12Z">
+        </path>
+      </svg>
+    </button>
+    <div id="player-container">
+      <video id="main-video" playsinline></video>
 
-        <div class="controls-overlay" id="controls">
-          <div class="timeline-container">
-            <div class="preview-container" id="preview-container">
-              <video id="preview-video" muted playsinline></video>
-              <div class="preview-time" id="preview-time">00:00</div>
-            </div>
-            <div id="timeline-markers" style="position: absolute; inset: 0; pointer-events: none; z-index: 2; display: flex; align-items: center;"></div>
-            <input
-              type="range"
-              class="seek-bar"
-              id="seek-bar"
-              min="0"
-              max="100"
-              step="0.1"
-              value="0"
-            />
-          </div>
-          <div class="buttons-row">
-            <div class="left-controls">
-              <button
-                class="control-btn"
-                id="play-pause-btn"
-                title="Воспроизведение (Пробел)"
-              >
-                <svg id="icon-play" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                <svg id="icon-pause" viewBox="0 0 24 24" style="display: none">
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              </button>
-              <div class="volume-container">
-                <button class="control-btn" id="mute-btn" title="Громкость (M)">
-                  <svg id="icon-vol-up" viewBox="0 0 24 24">
-                    <path
-                      d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
-                    />
-                  </svg>
-                  <svg
-                    id="icon-vol-low"
-                    viewBox="0 0 24 24"
-                    style="display: none"
-                  >
-                    <path
-                      d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
-                    />
-                  </svg>
-                  <svg id="icon-mute" viewBox="0 0 24 24" style="display: none">
-                    <path
-                      d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
-                    />
-                  </svg>
-                </button>
-                <input
-                  type="range"
-                  class="volume-bar"
-                  id="volume-bar"
-                  min="0"
-                  max="2"
-                  step="0.05"
-                  value="0.5"
-                />
-              </div>
-              <div class="time-display" id="time-display">00:00 / 00:00</div>
-            </div>
-            <div class="right-controls">
-              <div class="speed-control-container">
-                <button class="speed-btn" id="speed-btn" title="Скорость воспроизведения">1.0x</button>
-                <div class="speed-menu" id="speed-menu">
-                  <div class="speed-option" data-value="0.5">0.5x</div>
-                  <div class="speed-option active" data-value="1">1.0x</div>
-                  <div class="speed-option" data-value="1.25">1.25x</div>
-                  <div class="speed-option" data-value="1.5">1.5x</div>
-                  <div class="speed-option" data-value="2">2.0x</div>
-                </div>
-              </div>
-              <button
-                class="control-btn"
-                id="fullscreen-btn"
-                title="Во весь экран (F)"
-              >
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+      <div class="speed-overlay" id="speed-overlay">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
+        </svg>
+        Скорость 2x
       </div>
 
-      <div id="chat-section">
-        <div id="chat-resizer" class="chat-resizer" title="Зажмите и потяните для изменения ширины чата (двойной клик — сброс)"></div>
-        <div class="chat-header">
-          <span>Чат трансляции</span>
-          <div class="chat-header-actions">
-            <button id="toggle-chat-transparency-btn" class="chat-header-btn" title="Переключить прозрачность чата">
-              <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18V4a8 8 0 0 1 0 16z"/></svg>
-            </button>
-            <button id="toggle-chat-side-btn" class="chat-header-btn" title="Перенести чат (слева/справа)">
-              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 16H5V5h5v14zm9 0h-7V5h7v14z"/></svg>
-            </button>
-            <button id="chat-screenshot-toggle-btn" class="chat-header-btn" title="Выбрать сообщения для скриншота">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-            </button>
-            <button id="hide-chat-btn" class="chat-header-btn" title="Скрыть чат">
-              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </button>
+      <!-- Центральный попап для отображения действий (громкость, пауза, перемотка) -->
+      <div id="action-overlay-center" class="action-overlay-center">
+        <div id="action-icon-center"></div>
+        <div id="action-text-center" class="action-text"></div>
+      </div>
+
+      <div class="controls-overlay" id="controls">
+        <div class="timeline-container">
+          <div class="preview-container" id="preview-container">
+            <video id="preview-video" muted playsinline></video>
+            <div class="preview-time" id="preview-time">00:00</div>
           </div>
+          <div id="timeline-markers"
+            style="position: absolute; inset: 0; pointer-events: none; z-index: 2; display: flex; align-items: center;">
+          </div>
+          <input type="range" class="seek-bar" id="seek-bar" min="0" max="100" step="0.1" value="0" />
         </div>
-        <div id="chat-messages"></div>
-        <button id="jump-to-bottom-btn" class="jump-to-bottom-btn">
-          <span>Перейти к новым</span>
-          <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
-        </button>
-        <div id="link-preview-tooltip" class="link-preview-tooltip"></div>
-        
-        <!-- Screenshot Action Bar -->
-        <div id="screenshot-action-bar" class="screenshot-action-bar">
-          <div class="screenshot-selected-info">
-            Выбрано: <span id="screenshot-selected-count">0</span>
+        <div class="buttons-row">
+          <div class="left-controls">
+            <button class="control-btn" id="play-pause-btn" title="Воспроизведение (Пробел)">
+              <svg id="icon-play" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <svg id="icon-pause" viewBox="0 0 24 24" style="display: none">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+            </button>
+            <div class="volume-container">
+              <button class="control-btn" id="mute-btn" title="Громкость (M)">
+                <svg id="icon-vol-up" viewBox="0 0 24 24">
+                  <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                </svg>
+                <svg id="icon-vol-low" viewBox="0 0 24 24" style="display: none">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+                </svg>
+                <svg id="icon-mute" viewBox="0 0 24 24" style="display: none">
+                  <path
+                    d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                </svg>
+              </button>
+              <input type="range" class="volume-bar" id="volume-bar" min="0" max="2" step="0.05" value="0.5" />
+            </div>
+            <div class="time-display" id="time-display">00:00 / 00:00</div>
           </div>
-          <div class="screenshot-bar-actions">
-            <button id="screenshot-cancel-btn" class="btn-secondary">Отмена</button>
-            <button id="screenshot-generate-btn" class="btn-primary">Скриншот</button>
+          <div class="right-controls">
+            <div class="speed-control-container">
+              <button class="speed-btn" id="speed-btn" title="Скорость воспроизведения">1.0x</button>
+              <div class="speed-menu" id="speed-menu">
+                <div class="speed-option" data-value="0.5">0.5x</div>
+                <div class="speed-option active" data-value="1">1.0x</div>
+                <div class="speed-option" data-value="1.25">1.25x</div>
+                <div class="speed-option" data-value="1.5">1.5x</div>
+                <div class="speed-option" data-value="2">2.0x</div>
+              </div>
+            </div>
+            <button class="control-btn" id="fullscreen-btn" title="Во весь экран (F)">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Screenshot Preview Modal -->
-    <div id="screenshot-preview-modal" class="screenshot-preview-modal">
-      <div class="screenshot-preview-panel">
-        <div class="profile-header">
-          <span>Предпросмотр скриншота</span>
-          <button id="close-screenshot-preview-btn" class="close-profile-btn">
-            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    <div id="chat-section">
+      <div id="chat-resizer" class="chat-resizer"
+        title="Зажмите и потяните для изменения ширины чата (двойной клик — сброс)"></div>
+      <div class="chat-header">
+        <span>Чат трансляции</span>
+        <div class="chat-header-actions">
+          <button id="toggle-chat-transparency-btn" class="chat-header-btn" title="Переключить прозрачность чата">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18V4a8 8 0 0 1 0 16z" />
+            </svg>
+          </button>
+          <button id="toggle-chat-side-btn" class="chat-header-btn" title="Перенести чат (слева/справа)">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 16H5V5h5v14zm9 0h-7V5h7v14z" />
+            </svg>
+          </button>
+          <button id="chat-screenshot-toggle-btn" class="chat-header-btn" title="Выбрать сообщения для скриншота">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3.2" />
+              <path
+                d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
+            </svg>
+          </button>
+          <button id="hide-chat-btn" class="chat-header-btn" title="Скрыть чат">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
           </button>
         </div>
-        <div class="screenshot-img-container">
-          <img id="screenshot-preview-img" src="" alt="Screenshot Preview">
+      </div>
+      <div id="chat-messages"></div>
+      <button id="jump-to-bottom-btn" class="jump-to-bottom-btn">
+        <span>Перейти к новым</span>
+        <svg viewBox="0 0 24 24">
+          <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+        </svg>
+      </button>
+      <div id="link-preview-tooltip" class="link-preview-tooltip"></div>
+
+      <!-- Screenshot Action Bar -->
+      <div id="screenshot-action-bar" class="screenshot-action-bar">
+        <div class="screenshot-selected-info">
+          Выбрано: <span id="screenshot-selected-count">0</span>
         </div>
-        <div class="preview-actions">
-          <button id="copy-screenshot-btn" class="btn-secondary">Скопировать</button>
-          <button id="download-screenshot-btn" class="btn-primary">Скачать PNG</button>
+        <div class="screenshot-bar-actions">
+          <button id="screenshot-cancel-btn" class="btn-secondary">Отмена</button>
+          <button id="screenshot-generate-btn" class="btn-primary">Скриншот</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Всплывающее меню профиля пользователя (Драг-панель) -->
-    <div id="user-profile-panel" class="user-profile-panel">
+  <!-- Screenshot Preview Modal -->
+  <div id="screenshot-preview-modal" class="screenshot-preview-modal">
+    <div class="screenshot-preview-panel">
       <div class="profile-header">
-        <img id="profile-avatar" class="profile-avatar" src="" alt="avatar">
-        <div class="profile-name-container">
-          <span id="profile-username" class="profile-username"></span>
-          <span id="profile-role" class="profile-role"></span>
-        </div>
-        <button id="close-profile-btn" class="close-profile-btn">
-          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <span>Предпросмотр скриншота</span>
+        <button id="close-screenshot-preview-btn" class="close-profile-btn">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
         </button>
       </div>
-      <div class="profile-body">
-        <div id="profile-description" class="profile-description"></div>
-        <div class="profile-section-title">Сообщения пользователя:</div>
-        <div id="profile-messages-list" class="profile-messages-list"></div>
+      <div class="screenshot-img-container">
+        <img id="screenshot-preview-img" src="" alt="Screenshot Preview">
+      </div>
+      <div class="preview-actions">
+        <button id="copy-screenshot-btn" class="btn-secondary">Скопировать</button>
+        <button id="download-screenshot-btn" class="btn-primary">Скачать PNG</button>
       </div>
     </div>
+  </div>
 
-            <script src="js/globals.js"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/chat_parser.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/chat.js"></script>
-    <script src="js/screenshot.js"></script>
-    <script src="js/app_init.js"></script>
-  </body>
+  <!-- Всплывающее меню профиля пользователя (Драг-панель) -->
+  <div id="user-profile-panel" class="user-profile-panel">
+    <div class="profile-header">
+      <img id="profile-avatar" class="profile-avatar" src="" alt="avatar">
+      <div class="profile-name-container">
+        <span id="profile-username" class="profile-username"></span>
+        <span id="profile-role" class="profile-role"></span>
+      </div>
+      <button id="close-profile-btn" class="close-profile-btn">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+    </div>
+    <div class="profile-body">
+      <div id="profile-description" class="profile-description"></div>
+      <div class="profile-section-title">Сообщения пользователя:</div>
+      <div id="profile-messages-list" class="profile-messages-list"></div>
+    </div>
+  </div>
+
+  <script src="js/globals.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/chat_parser.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/screenshot.js"></script>
+  <script src="js/app_init.js"></script>
+</body>
+
 </html>
