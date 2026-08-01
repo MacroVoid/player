@@ -746,17 +746,36 @@
         right: -4px;
       }
 
-      /* Chat Transparency Mode */
+      /* Overlay Transparent Chat Mode (Chat floating ON TOP of video) */
+      #app-container.chat-transparent-active #player-container {
+        width: 100% !important;
+        flex: none !important;
+      }
+
       #chat-section.chat-transparent {
-        background-color: rgba(12, 12, 16, 0.35) !important;
+        position: absolute !important;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 100;
+        background-color: rgba(10, 10, 14, 0.45) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
-        border-left-color: rgba(255, 255, 255, 0.12) !important;
-        border-right-color: rgba(255, 255, 255, 0.12) !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-right: none !important;
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+      }
+
+      #app-container.chat-left #chat-section.chat-transparent {
+        right: auto !important;
+        left: 0 !important;
+        border-left: none !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
       }
 
       #chat-section.chat-transparent .chat-header {
-        background-color: rgba(18, 18, 22, 0.4) !important;
+        background-color: rgba(18, 18, 22, 0.45) !important;
       }
 
       #chat-section.chat-transparent .message-container {
@@ -1725,7 +1744,7 @@
         #chat-section {
           width: 100% !important;
           flex: 1;
-          min-height: 250px;
+          min-height: 200px;
           border-left: none !important;
           border-right: none !important;
           border-top: 1px solid var(--border-color);
@@ -1736,15 +1755,28 @@
           border-bottom: 1px solid var(--border-color);
         }
 
-        #app-container.fullscreen-chat-hidden #player-container,
-        #app-container.chat-hidden #player-container {
-          max-height: 100vh;
-          flex: 1;
+        /* Запрещаем скрывать чат в портретной ориентации на мобильных устройствах */
+        #hide-chat-btn {
+          display: none !important;
         }
 
-        #app-container.fullscreen-chat-hidden #chat-section,
-        #app-container.chat-hidden #chat-section {
-          display: none !important;
+        #app-container:not(:fullscreen) #chat-section {
+          display: flex !important;
+        }
+
+        .chat-resizer {
+          top: -6px !important;
+          bottom: auto !important;
+          left: 0 !important;
+          right: 0 !important;
+          width: 100% !important;
+          height: 12px !important;
+          cursor: row-resize !important;
+        }
+
+        #app-container.fullscreen-chat-hidden #player-container {
+          max-height: 100vh;
+          flex: 1;
         }
 
         .upload-card {

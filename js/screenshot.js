@@ -202,6 +202,7 @@
       const savedTransparent = localStorage.getItem('chat_transparent');
       if (savedTransparent === 'true') {
         chatSection.classList.add('chat-transparent');
+        appContainer.classList.add('chat-transparent-active');
         if (typeof toggleChatTransparencyBtn !== 'undefined' && toggleChatTransparencyBtn) {
           toggleChatTransparencyBtn.classList.add('active');
         }
@@ -211,6 +212,7 @@
         toggleChatTransparencyBtn.addEventListener('click', () => {
           chatSection.classList.toggle('chat-transparent');
           const isTransparent = chatSection.classList.contains('chat-transparent');
+          appContainer.classList.toggle('chat-transparent-active', isTransparent);
           toggleChatTransparencyBtn.classList.toggle('active', isTransparent);
           try {
             localStorage.setItem('chat_transparent', isTransparent ? 'true' : 'false');
@@ -218,60 +220,86 @@
         });
       }
 
-      // Chat Resizing Logic (Drag & Touch)
+      // Chat Resizing Logic (Drag & Touch for Desktop, Mobile Landscape & Portrait)
       try {
         const savedWidth = localStorage.getItem('chat_width');
         if (savedWidth && !isNaN(parseFloat(savedWidth))) {
           chatSection.style.width = `${parseFloat(savedWidth)}px`;
+        }
+        const savedPlayerHeight = localStorage.getItem('player_height_portrait');
+        if (savedPlayerHeight && !isNaN(parseFloat(savedPlayerHeight))) {
+          playerContainer.style.maxHeight = `${parseFloat(savedPlayerHeight)}px`;
         }
       } catch (e) {}
 
       if (typeof chatResizer !== 'undefined' && chatResizer) {
         let isResizing = false;
         let startX = 0;
+        let startY = 0;
         let startWidth = 0;
+        let startPlayerHeight = 0;
 
-        function startResize(clientX) {
+        function startResize(clientX, clientY) {
           isResizing = true;
           startX = clientX;
+          startY = clientY;
           startWidth = chatSection.offsetWidth;
+          startPlayerHeight = playerContainer.offsetHeight;
           chatResizer.classList.add('resizing');
-          document.body.style.cursor = 'col-resize';
           document.body.style.userSelect = 'none';
         }
 
-        function doResize(clientX) {
+        function doResize(clientX, clientY) {
           if (!isResizing) return;
-          const isLeft = appContainer.classList.contains('chat-left');
-          const delta = clientX - startX;
-          let newWidth = isLeft ? (startWidth + delta) : (startWidth - delta);
+          const isPortrait = window.matchMedia('(orientation: portrait)').matches && window.innerWidth <= 1024;
           
-          const minW = 200;
-          const maxW = Math.min(650, window.innerWidth * 0.6);
-          if (newWidth < minW) newWidth = minW;
-          if (newWidth > maxW) newWidth = maxW;
+          if (isPortrait) {
+            // Вертикальный размер в портретном режиме (изменение высоты плеера)
+            const deltaY = clientY - startY;
+            let newHeight = startPlayerHeight + deltaY;
+            const minH = 150;
+            const maxH = window.innerHeight * 0.7;
+            if (newHeight < minH) newHeight = minH;
+            if (newHeight > maxH) newHeight = maxH;
+            
+            playerContainer.style.maxHeight = `${newHeight}px`;
+          } else {
+            // Горизонтальный размер (изменение ширины чата)
+            const isLeft = appContainer.classList.contains('chat-left');
+            const deltaX = clientX - startX;
+            let newWidth = isLeft ? (startWidth + deltaX) : (startWidth - deltaX);
+            
+            const minW = (window.innerHeight <= 550) ? 130 : 180;
+            const maxW = Math.min(650, window.innerWidth * 0.6);
+            if (newWidth < minW) newWidth = minW;
+            if (newWidth > maxW) newWidth = maxW;
 
-          chatSection.style.width = `${newWidth}px`;
+            chatSection.style.width = `${newWidth}px`;
+          }
         }
 
         function stopResize() {
           if (isResizing) {
             isResizing = false;
             chatResizer.classList.remove('resizing');
-            document.body.style.cursor = '';
             document.body.style.userSelect = '';
             try {
-              localStorage.setItem('chat_width', chatSection.offsetWidth);
+              const isPortrait = window.matchMedia('(orientation: portrait)').matches && window.innerWidth <= 1024;
+              if (isPortrait) {
+                localStorage.setItem('player_height_portrait', playerContainer.offsetHeight);
+              } else {
+                localStorage.setItem('chat_width', chatSection.offsetWidth);
+              }
             } catch (e) {}
           }
         }
 
         chatResizer.addEventListener('mousedown', (e) => {
           e.preventDefault();
-          startResize(e.clientX);
+          startResize(e.clientX, e.clientY);
 
           function onMouseMove(e) {
-            doResize(e.clientX);
+            doResize(e.clientX, e.clientY);
           }
 
           function onMouseUp() {
@@ -287,11 +315,13 @@
         // Touch support for resizer
         chatResizer.addEventListener('touchstart', (e) => {
           if (e.touches.length !== 1) return;
-          startResize(e.touches[0].clientX);
+          const touch = e.touches[0];
+          startResize(touch.clientX, touch.clientY);
 
           function onTouchMove(e) {
             if (e.touches.length === 1) {
-              doResize(e.touches[0].clientX);
+              const t = e.touches[0];
+              doResize(t.clientX, t.clientY);
             }
           }
 
@@ -305,11 +335,13 @@
           window.addEventListener('touchend', onTouchEnd);
         }, { passive: true });
 
-        // Double click to reset chat width
+        // Double click to reset sizes
         chatResizer.addEventListener('dblclick', () => {
           chatSection.style.width = '';
+          playerContainer.style.maxHeight = '';
           try {
             localStorage.removeItem('chat_width');
+            localStorage.removeItem('player_height_portrait');
           } catch(e) {}
         });
       }
