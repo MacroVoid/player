@@ -720,6 +720,7 @@
       function makeDraggable(el, header) {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         header.onmousedown = dragMouseDown;
+        header.addEventListener('touchstart', dragTouchStart, { passive: false });
 
         function dragMouseDown(e) {
           e = e || window.event;
@@ -740,6 +741,31 @@
           pos3 = e.clientX;
           pos4 = e.clientY;
           
+          updatePosition();
+        }
+
+        function dragTouchStart(e) {
+          if (e.target.closest('button')) return;
+          const touch = e.touches[0];
+          pos3 = touch.clientX;
+          pos4 = touch.clientY;
+          document.addEventListener('touchend', closeTouchDrag);
+          document.addEventListener('touchmove', touchMove, { passive: false });
+        }
+
+        function touchMove(e) {
+          if (e.touches.length !== 1) return;
+          e.preventDefault();
+          const touch = e.touches[0];
+          pos1 = pos3 - touch.clientX;
+          pos2 = pos4 - touch.clientY;
+          pos3 = touch.clientX;
+          pos4 = touch.clientY;
+
+          updatePosition();
+        }
+
+        function updatePosition() {
           let newTop = el.offsetTop - pos2;
           let newLeft = el.offsetLeft - pos1;
           
@@ -758,6 +784,11 @@
         function closeDragElement() {
           document.onmouseup = null;
           document.onmousemove = null;
+        }
+
+        function closeTouchDrag() {
+          document.removeEventListener('touchend', closeTouchDrag);
+          document.removeEventListener('touchmove', touchMove);
         }
       }
 

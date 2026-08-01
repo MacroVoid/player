@@ -193,10 +193,28 @@
           console.error(e);
         }
       });
-      // Fullscreen Chat Collapse Logic
+      // Fullscreen Chat Collapse & Side Toggle Logic
       const hideChatBtn = document.getElementById('hide-chat-btn');
       const showChatBtn = document.getElementById('show-chat-btn');
       const chatSection = document.getElementById('chat-section');
+
+      // Restore saved chat side preference
+      try {
+        const savedSide = localStorage.getItem('chat_side');
+        if (savedSide === 'left') {
+          appContainer.classList.add('chat-left');
+        }
+      } catch (e) {}
+
+      if (typeof toggleChatSideBtn !== 'undefined' && toggleChatSideBtn) {
+        toggleChatSideBtn.addEventListener('click', () => {
+          appContainer.classList.toggle('chat-left');
+          const isLeft = appContainer.classList.contains('chat-left');
+          try {
+            localStorage.setItem('chat_side', isLeft ? 'left' : 'right');
+          } catch (e) {}
+        });
+      }
 
       hideChatBtn.addEventListener('click', () => {
         appContainer.classList.add('fullscreen-chat-hidden');

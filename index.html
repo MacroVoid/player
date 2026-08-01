@@ -162,16 +162,19 @@
       </div>
 
       <div id="chat-section">
-        <button id="hide-chat-btn" class="hide-chat-btn" title="Скрыть чат">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 5h2v14H3V5Zm19.414 7-6.707-6.707-1.414 1.414L18.586 11H7v2h11.586l-4.293 4.293 1.414 1.414L22.414 12Z"></path>
-          </svg>
-        </button>
         <div class="chat-header">
           <span>Чат трансляции</span>
-          <button id="chat-screenshot-toggle-btn" class="chat-header-btn" title="Выбрать сообщения для скриншота">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-          </button>
+          <div class="chat-header-actions">
+            <button id="toggle-chat-side-btn" class="chat-header-btn" title="Перенести чат (слева/справа)">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 16H5V5h5v14zm9 0h-7V5h7v14z"/></svg>
+            </button>
+            <button id="chat-screenshot-toggle-btn" class="chat-header-btn" title="Выбрать сообщения для скриншота">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            </button>
+            <button id="hide-chat-btn" class="chat-header-btn" title="Скрыть чат">
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
         </div>
         <div id="chat-messages"></div>
         <button id="jump-to-bottom-btn" class="jump-to-bottom-btn">

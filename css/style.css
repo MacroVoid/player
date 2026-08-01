@@ -736,6 +736,12 @@
         transition: all 0.2s ease;
       }
 
+      .chat-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
       .chat-header-btn:hover {
         color: var(--text-color);
         background-color: rgba(255, 255, 255, 0.08);
@@ -1451,9 +1457,24 @@
       .profile-messages-list::-webkit-scrollbar-thumb:hover {
         background-color: rgba(255, 255, 255, 0.25);
       }
+      /* --- Chat Docking Position (Left vs Right) --- */
+      #app-container.chat-left {
+        flex-direction: row-reverse;
+      }
+
+      #app-container.chat-left #chat-section {
+        border-left: none;
+        border-right: 1px solid var(--border-color);
+      }
+
+      #app-container.chat-left .show-chat-btn {
+        right: auto;
+        left: 20px;
+      }
+
       /* Fullscreen mode chat adjustments */
       .hide-chat-btn {
-        display: none;
+        display: flex;
         background: transparent;
         border: none;
         color: var(--text-muted);
@@ -1518,58 +1539,51 @@
         background-color: #000;
       }
 
+      #app-container.chat-left:fullscreen {
+        flex-direction: row-reverse;
+      }
+
       #app-container:fullscreen #player-container {
         flex: 1;
-        width: 100%;
+        width: auto;
         height: 100%;
+        position: relative;
+        overflow: hidden;
       }
 
       #app-container:fullscreen #chat-section {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
+        position: relative;
         width: 340px;
+        height: 100%;
+        flex-shrink: 0;
         z-index: 100;
-        background-color: rgba(15, 15, 15, 0.2) !important;
-        backdrop-filter: blur(25px) !important;
-        -webkit-backdrop-filter: blur(25px) !important;
-        border-left: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
+        background-color: var(--chat-bg);
+        border-left: 1px solid var(--border-color);
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translateX(0);
+      }
+
+      #app-container.chat-left:fullscreen #chat-section {
+        border-left: none;
+        border-right: 1px solid var(--border-color);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
       }
 
       #app-container:fullscreen .chat-header {
-        display: none !important;
-      }
-
-      #app-container:fullscreen #hide-chat-btn {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 110;
-        display: flex;
-        background: rgba(24, 24, 27, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex !important;
+        background-color: rgba(24, 24, 27, 0.9);
       }
 
       #app-container:fullscreen #chat-messages {
-        padding-top: 60px !important;
+        padding-top: 12px !important;
       }
 
-      #app-container:fullscreen #chat-section.fullscreen-hidden {
-        transform: translateX(100%);
-        pointer-events: none;
+      #app-container:fullscreen #chat-section.fullscreen-hidden,
+      #app-container.fullscreen-chat-hidden #chat-section {
+        display: none !important;
       }
 
-      /* Hide button only visible in fullscreen */
-      #app-container:fullscreen .hide-chat-btn {
-        display: flex;
-      }
-
-      /* Show button only visible in fullscreen when chat is hidden */
+      /* Show button in fullscreen when chat is hidden */
       #app-container.fullscreen-chat-hidden:fullscreen .show-chat-btn {
         display: flex;
       }
@@ -1582,14 +1596,136 @@
         padding-bottom: 4px;
       }
 
-      /* Adjust controls overlay right margin when chat is visible in fullscreen */
+      /* Controls overlay inside player container automatically fits video player */
       #app-container:fullscreen .controls-overlay {
-        right: 360px;
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        right: 20px;
+        left: 20px;
       }
 
-      #app-container.fullscreen-chat-hidden:fullscreen .controls-overlay {
-        right: 20px;
+      /* ==========================================================================
+         Responsive Adaptations (Mobile & Tablet)
+         ========================================================================== */
+
+      @media screen and (max-width: 768px), (max-device-width: 900px) and (orientation: portrait) {
+        #app-container {
+          flex-direction: column !important;
+          overflow-y: auto;
+        }
+
+        #app-container.chat-left {
+          flex-direction: column-reverse !important;
+        }
+
+        #player-container {
+          width: 100% !important;
+          height: auto !important;
+          aspect-ratio: 16 / 9;
+          max-height: 45vh;
+          flex-shrink: 0;
+        }
+
+        #chat-section {
+          width: 100% !important;
+          flex: 1;
+          min-height: 250px;
+          border-left: none !important;
+          border-right: none !important;
+          border-top: 1px solid var(--border-color);
+        }
+
+        #app-container.chat-left #chat-section {
+          border-top: none !important;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        #app-container.fullscreen-chat-hidden #player-container,
+        #app-container.chat-hidden #player-container {
+          max-height: 100vh;
+          flex: 1;
+        }
+
+        #app-container.fullscreen-chat-hidden #chat-section,
+        #app-container.chat-hidden #chat-section {
+          display: none !important;
+        }
+
+        .upload-card {
+          padding: 24px 20px;
+          margin: 16px;
+          border-radius: 16px;
+          max-width: 100%;
+        }
+
+        .upload-card h2 {
+          font-size: 1.35rem;
+        }
+
+        .controls-overlay {
+          bottom: 12px;
+          left: 12px;
+          right: 12px;
+          gap: 8px;
+        }
+
+        .left-controls, .right-controls {
+          gap: 6px;
+        }
+
+        .control-btn,
+        .volume-container,
+        .time-display,
+        .speed-control-container {
+          height: 36px;
+          border-radius: 10px;
+        }
+
+        .control-btn {
+          width: 36px;
+        }
+
+        .control-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .time-display {
+          font-size: 0.75rem;
+          padding: 0 8px;
+        }
+
+        .speed-btn {
+          padding: 0 10px;
+          font-size: 0.8rem;
+          min-width: 48px;
+        }
+      }
+
+      @media screen and (max-width: 480px) {
+        .volume-bar {
+          width: 45px;
+        }
+
+        .volume-container {
+          padding: 0 6px;
+          gap: 4px;
+        }
+
+        .user-profile-panel {
+          width: 94vw !important;
+          height: 80vh !important;
+          left: 3vw !important;
+          top: 10vh !important;
+        }
+
+        .screenshot-preview-panel {
+          width: 94vw !important;
+        }
+      }
+
+      @media screen and (min-width: 769px) and (max-width: 1024px) {
+        #chat-section {
+          width: 300px;
+        }
       }.chat-reply {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.5);

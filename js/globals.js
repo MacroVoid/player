@@ -28,6 +28,7 @@ const videoInput = document.getElementById("video-input");
       const speedMenu = document.getElementById("speed-menu");
       const speedOptions = document.querySelectorAll(".speed-option");
       const fullscreenBtn = document.getElementById("fullscreen-btn");
+      const toggleChatSideBtn = document.getElementById("toggle-chat-side-btn");
       const speedOverlay = document.getElementById("speed-overlay");
       const previewContainer = document.getElementById("preview-container");
       const previewVideo = document.getElementById("preview-video");
