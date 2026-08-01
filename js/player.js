@@ -404,7 +404,7 @@
           if (!videoEl.paused) {
             controlsTimeout = setTimeout(() => {
               playerContainer.classList.add("controls-hidden");
-            }, 2500); // Авто-скрытие элементов управления через 2.5 сек
+            }, 3500); // Показ элементов на 3.5 сек перед авто-скрытием
           }
         }
 
@@ -456,6 +456,7 @@
         // Добавляем переменные для отслеживания фокуса окна
         let lastFocusTime = 0;
         let ignoreClickAfterFocus = false;
+        let lastTouchEndTime = 0;
 
         // Отлавливаем момент, когда окно становится активным
         window.addEventListener("focus", () => {
@@ -559,7 +560,7 @@
               }
               startSpeedUp();
             }
-          }, 320); // 320мс для надежного откливания тапов без ложного зажатия
+          }, 320);
         }, { passive: true });
 
         videoEl.addEventListener("touchmove", (e) => {
@@ -573,6 +574,8 @@
 
         videoEl.addEventListener("touchend", (e) => {
           clearTimeout(pressTimer);
+          lastTouchEndTime = Date.now();
+
           if (speedUpActive) {
             stopSpeedUp();
             return;
@@ -611,9 +614,14 @@
 
           if (e.button !== 0) return;
 
+          // Блокируем симулированный mouseup от сенсорного тапа
+          if (Date.now() - lastTouchEndTime < 450) {
+            return;
+          }
+
           // Если этот клик был для активации окна, ничего не делаем
           if (ignoreClickAfterFocus) {
-            ignoreClickAfterFocus = false; // сбрасываем флаг
+            ignoreClickAfterFocus = false;
             return;
           }
 
@@ -621,9 +629,7 @@
           if (speedUpActive) {
             stopSpeedUp();
           } else if (!isLongPress && e.target === videoEl) {
-            if (!('ontouchstart' in window) || e.pointerType === 'mouse') {
-              handleTapOrClick(e.clientX, e.clientY);
-            }
+            handleTapOrClick(e.clientX, e.clientY);
           }
         });
         playerContainer.addEventListener("mouseleave", () => {
