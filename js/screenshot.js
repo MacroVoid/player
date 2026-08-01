@@ -210,6 +210,9 @@
 
       if (typeof toggleChatTransparencyBtn !== 'undefined' && toggleChatTransparencyBtn) {
         toggleChatTransparencyBtn.addEventListener('click', () => {
+          const isPortrait = window.matchMedia('(orientation: portrait)').matches && window.innerWidth <= 1024;
+          if (isPortrait) return; // Запрещено в вертикальной ориентации на мобильных
+
           chatSection.classList.toggle('chat-transparent');
           const isTransparent = chatSection.classList.contains('chat-transparent');
           appContainer.classList.toggle('chat-transparent-active', isTransparent);
@@ -375,6 +378,9 @@
 
       if (typeof toggleChatSideBtn !== 'undefined' && toggleChatSideBtn) {
         toggleChatSideBtn.addEventListener('click', () => {
+          const isPortrait = window.matchMedia('(orientation: portrait)').matches && window.innerWidth <= 1024;
+          if (isPortrait) return; // Запрещено в вертикальной ориентации на мобильных
+
           appContainer.classList.toggle('chat-left');
           const isLeft = appContainer.classList.contains('chat-left');
           try {
