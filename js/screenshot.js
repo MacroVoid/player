@@ -198,6 +198,122 @@
       const showChatBtn = document.getElementById('show-chat-btn');
       const chatSection = document.getElementById('chat-section');
 
+      // Chat Transparency & Resizer Logic
+      const savedTransparent = localStorage.getItem('chat_transparent');
+      if (savedTransparent === 'true') {
+        chatSection.classList.add('chat-transparent');
+        if (typeof toggleChatTransparencyBtn !== 'undefined' && toggleChatTransparencyBtn) {
+          toggleChatTransparencyBtn.classList.add('active');
+        }
+      }
+
+      if (typeof toggleChatTransparencyBtn !== 'undefined' && toggleChatTransparencyBtn) {
+        toggleChatTransparencyBtn.addEventListener('click', () => {
+          chatSection.classList.toggle('chat-transparent');
+          const isTransparent = chatSection.classList.contains('chat-transparent');
+          toggleChatTransparencyBtn.classList.toggle('active', isTransparent);
+          try {
+            localStorage.setItem('chat_transparent', isTransparent ? 'true' : 'false');
+          } catch(e) {}
+        });
+      }
+
+      // Chat Resizing Logic (Drag & Touch)
+      try {
+        const savedWidth = localStorage.getItem('chat_width');
+        if (savedWidth && !isNaN(parseFloat(savedWidth))) {
+          chatSection.style.width = `${parseFloat(savedWidth)}px`;
+        }
+      } catch (e) {}
+
+      if (typeof chatResizer !== 'undefined' && chatResizer) {
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        function startResize(clientX) {
+          isResizing = true;
+          startX = clientX;
+          startWidth = chatSection.offsetWidth;
+          chatResizer.classList.add('resizing');
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        }
+
+        function doResize(clientX) {
+          if (!isResizing) return;
+          const isLeft = appContainer.classList.contains('chat-left');
+          const delta = clientX - startX;
+          let newWidth = isLeft ? (startWidth + delta) : (startWidth - delta);
+          
+          const minW = 200;
+          const maxW = Math.min(650, window.innerWidth * 0.6);
+          if (newWidth < minW) newWidth = minW;
+          if (newWidth > maxW) newWidth = maxW;
+
+          chatSection.style.width = `${newWidth}px`;
+        }
+
+        function stopResize() {
+          if (isResizing) {
+            isResizing = false;
+            chatResizer.classList.remove('resizing');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            try {
+              localStorage.setItem('chat_width', chatSection.offsetWidth);
+            } catch (e) {}
+          }
+        }
+
+        chatResizer.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          startResize(e.clientX);
+
+          function onMouseMove(e) {
+            doResize(e.clientX);
+          }
+
+          function onMouseUp() {
+            stopResize();
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+          }
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Touch support for resizer
+        chatResizer.addEventListener('touchstart', (e) => {
+          if (e.touches.length !== 1) return;
+          startResize(e.touches[0].clientX);
+
+          function onTouchMove(e) {
+            if (e.touches.length === 1) {
+              doResize(e.touches[0].clientX);
+            }
+          }
+
+          function onTouchEnd() {
+            stopResize();
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+          }
+
+          window.addEventListener('touchmove', onTouchMove, { passive: true });
+          window.addEventListener('touchend', onTouchEnd);
+        }, { passive: true });
+
+        // Double click to reset chat width
+        chatResizer.addEventListener('dblclick', () => {
+          chatSection.style.width = '';
+          try {
+            localStorage.removeItem('chat_width');
+          } catch(e) {}
+        });
+      }
+
       // Restore saved chat side preference
       try {
         const savedSide = localStorage.getItem('chat_side');

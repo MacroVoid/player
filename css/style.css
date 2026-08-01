@@ -676,6 +676,47 @@
         flex-direction: column;
         height: 100%;
         position: relative;
+        transition: background-color 0.3s ease, width 0.05s ease;
+      }
+
+      /* Chat Resizer Bar */
+      .chat-resizer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -4px;
+        width: 8px;
+        cursor: col-resize;
+        z-index: 120;
+        transition: background-color 0.2s ease;
+      }
+
+      .chat-resizer:hover,
+      .chat-resizer.resizing {
+        background-color: var(--accent-color);
+        box-shadow: 0 0 8px var(--accent-color);
+      }
+
+      #app-container.chat-left #chat-section .chat-resizer {
+        left: auto;
+        right: -4px;
+      }
+
+      /* Chat Transparency Mode */
+      #chat-section.chat-transparent {
+        background-color: rgba(15, 15, 15, 0.45) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-left-color: rgba(255, 255, 255, 0.15) !important;
+        border-right-color: rgba(255, 255, 255, 0.15) !important;
+      }
+
+      #chat-section.chat-transparent .chat-header {
+        background-color: rgba(24, 24, 27, 0.5) !important;
+      }
+
+      #chat-section.chat-transparent .message-container {
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       }
 
       .jump-to-bottom-btn {
